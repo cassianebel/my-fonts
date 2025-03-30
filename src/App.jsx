@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import Modal from "./Components/Modal";
+import { FaHeart, FaRegHeart } from "react-icons/fa";
 
 function App() {
+  const [myFonts, setmyFonts] = useState([]);
   const [fonts, setFonts] = useState([]);
   const [totalResults, setTotalResults] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
@@ -15,6 +17,8 @@ function App() {
   const [fontStyle, setFontStyle] = useState("normal");
   const [headingSize, setHeadingSize] = useState(32);
   const [paragraphSize, setParagraphSize] = useState(18);
+  const [category, setCategory] = useState("all");
+  const [sorting, setSorting] = useState("trending");
 
   const APIKEY = import.meta.env.VITE_GOOGLEFONTS_API_KEY;
   const itemsPerPage = 10;
@@ -24,14 +28,29 @@ function App() {
   const currentFonts = fonts.slice(indexOfFirstFont, indexOfLastFont);
 
   useEffect(() => {
-    fetch(`https://www.googleapis.com/webfonts/v1/webfonts?key=${APIKEY}`)
+    const storedFonts = JSON.parse(localStorage.getItem("myFonts"));
+    if (storedFonts && storedFonts.length > 0) {
+      setmyFonts(storedFonts);
+    }
+  }, []);
+
+  useEffect(() => {
+    let url = `https://www.googleapis.com/webfonts/v1/webfonts?key=${APIKEY}&sort=${sorting}`;
+    if (category !== "all") {
+      url = `https://www.googleapis.com/webfonts/v1/webfonts?key=${APIKEY}&category=${category}&sort=${sorting}`;
+    }
+    fetch(url)
       .then((res) => res.json())
       .then((data) => {
         console.log(data.items);
         setFonts(data.items);
         setTotalResults(data.items.length);
       });
-  }, []);
+  }, [APIKEY, sorting, category]);
+
+  useEffect(() => {
+    localStorage.setItem("myFonts", JSON.stringify(myFonts));
+  }, [myFonts]);
 
   const openModal = () => {
     setIsModalOpen(true);
@@ -58,6 +77,88 @@ function App() {
     const matchStyle = variant.match(/[a-zA-Z]+/);
     const style = matchStyle ? matchStyle[0] : "normal";
     setFontStyle(style);
+  };
+
+  const createVariantString = (font) => {
+    let normalWeights = font.variants
+      .map((variant) => {
+        const weightMatch = variant.match(/\d+/);
+        const weight = weightMatch ? weightMatch[0] : "400"; // Default to 400 if no weight is found
+        return variant.includes("italic") ? null : weight; // Exclude italic variants
+      })
+      .filter(Boolean); // Remove null values
+
+    if (
+      JSON.stringify(normalWeights) ==
+      JSON.stringify([
+        "100",
+        "200",
+        "300",
+        "400",
+        "500",
+        "600",
+        "700",
+        "800",
+        "900",
+      ])
+    ) {
+      normalWeights = ["100..900"];
+    }
+
+    let italicWeights = font.variants
+      .map((variant) => {
+        const weightMatch = variant.match(/\d+/);
+        const weight = weightMatch ? weightMatch[0] : "400"; // Default to 400 if no weight is found
+        return variant.includes("italic") ? weight : null; // Invlude italic variants
+      })
+      .filter(Boolean); // Remove null values
+
+    if (
+      JSON.stringify(italicWeights) ==
+      JSON.stringify([
+        "100",
+        "200",
+        "300",
+        "400",
+        "500",
+        "600",
+        "700",
+        "800",
+        "900",
+      ])
+    ) {
+      italicWeights = ["100..900"];
+    }
+
+    let variantString = "";
+
+    if (italicWeights.length > 0) {
+      variantString = `ital,wght@0,${normalWeights.join(
+        ";0,"
+      )};1,${italicWeights.join(";1,")}`;
+    } else {
+      variantString = `wght@${normalWeights.join(";")}`;
+    }
+
+    return variantString;
+  };
+
+  const toggleFav = (font) => {
+    setmyFonts((prev) =>
+      prev.includes(font)
+        ? prev.filter((item) => item !== font)
+        : [...prev, font]
+    );
+  };
+
+  const filterMyFonts = () => {
+    fetch(`https://www.googleapis.com/webfonts/v1/webfonts?key=${APIKEY}`)
+      .then((res) => res.json())
+      .then((data) => {
+        const favs = data.items.filter((font) => myFonts.includes(font.family));
+        setFonts(favs);
+        setTotalResults(favs.length);
+      });
   };
 
   return (
@@ -89,6 +190,46 @@ function App() {
               className="block w-full border-1 rounded p-3"
             />
           </div>
+          <button
+            className="flex gap-2 items-center "
+            onClick={() => filterMyFonts()}
+          >
+            <FaHeart />
+            <span>view favorites</span>
+          </button>
+          <div>
+            <label htmlFor="category">Category</label>
+            <select
+              id="category"
+              name="category"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="px-4 py-2 bg-gray-200 rounded"
+            >
+              <option value="all">all</option>
+              <option value="serif">serif</option>
+              <option value="sans-serif">sans-serif</option>
+              <option value="monospace">monospace</option>
+              <option value="display">display</option>
+              <option value="handwriting">handwriting</option>
+            </select>
+          </div>
+          <div>
+            <label htmlFor="sort">Sort by</label>
+            <select
+              id="sort"
+              name="sort"
+              value={sorting}
+              onChange={(e) => setSorting(e.target.value)}
+              className="px-4 py-2 bg-gray-200 rounded"
+            >
+              <option value="alpha">alpha</option>
+              <option value="date">date</option>
+              <option value="popularity">popularity</option>
+              {/* <option value="style">style</option> */}
+              <option value="trending">trending</option>
+            </select>
+          </div>
           <div>
             <button
               onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
@@ -113,86 +254,35 @@ function App() {
         </header>
         <div className="col-span-3 grid grid-cols-1 grid-rows-10 gap-10 p-10">
           {currentFonts.map((font) => {
-            let normalWeights = font.variants
-              .map((variant) => {
-                const weightMatch = variant.match(/\d+/);
-                const weight = weightMatch ? weightMatch[0] : "400"; // Default to 400 if no weight is found
-                return variant.includes("italic") ? null : weight; // Exclude italic variants
-              })
-              .filter(Boolean); // Remove null values
-
-            if (
-              JSON.stringify(normalWeights) ==
-              JSON.stringify([
-                "100",
-                "200",
-                "300",
-                "400",
-                "500",
-                "600",
-                "700",
-                "800",
-                "900",
-              ])
-            ) {
-              normalWeights = ["100..900"];
-            }
-
-            let italicWeights = font.variants
-              .map((variant) => {
-                const weightMatch = variant.match(/\d+/);
-                const weight = weightMatch ? weightMatch[0] : "400"; // Default to 400 if no weight is found
-                return variant.includes("italic") ? weight : null; // Invlude italic variants
-              })
-              .filter(Boolean); // Remove null values
-
-            if (
-              JSON.stringify(italicWeights) ==
-              JSON.stringify([
-                "100",
-                "200",
-                "300",
-                "400",
-                "500",
-                "600",
-                "700",
-                "800",
-                "900",
-              ])
-            ) {
-              italicWeights = ["100..900"];
-            }
-
-            let variantString = "";
-
-            if (italicWeights.length > 0) {
-              variantString = `ital,wght@0,${normalWeights.join(
-                ";0,"
-              )};1,${italicWeights.join(";1,")}`;
-            } else {
-              variantString = `wght@${normalWeights.join(";")}`;
-            }
-
+            const variantString = createVariantString(font);
             return (
-              <div key={font.family} className="overflow-x-scroll">
-                <link
-                  rel="stylesheet"
-                  href={`https://fonts.googleapis.com/css2?family=${font.family.replace(
-                    /\s/g,
-                    "+"
-                  )}:${variantString}&display=swap`} // Correct format
-                />
-                <p
-                  style={{
-                    fontFamily: `"${font.family}"`,
-                    fontSize: fontSize + "px",
-                  }}
-                  className="w-max"
+              <div key={font.family} className="flex gap-2 items-center">
+                <button
+                  className="text-2xl"
+                  onClick={() => toggleFav(font.family)}
                 >
-                  <button onClick={() => showDetails(font)}>
-                    {sampleText}
-                  </button>
-                </p>
+                  {myFonts.includes(font.family) ? <FaHeart /> : <FaRegHeart />}
+                </button>
+                <div className="overflow-x-scroll">
+                  <link
+                    rel="stylesheet"
+                    href={`https://fonts.googleapis.com/css2?family=${font.family.replace(
+                      /\s/g,
+                      "+"
+                    )}:${variantString}&display=swap`} // Correct format
+                  />
+                  <div
+                    style={{
+                      fontFamily: `"${font.family}"`,
+                      fontSize: fontSize + "px",
+                    }}
+                    className="w-max"
+                  >
+                    <button onClick={() => showDetails(font)}>
+                      {sampleText}
+                    </button>
+                  </div>
+                </div>
               </div>
             );
           })}
@@ -237,6 +327,7 @@ function App() {
                     id={variant}
                     value={variant}
                     onChange={() => setVariant(variant)}
+                    className="me-2"
                   />
                   {formatFontVariantString(variant)}
                 </label>
