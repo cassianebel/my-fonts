@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Modal from "./Components/Modal";
 import { FaHeart, FaRegHeart } from "react-icons/fa";
 
@@ -19,6 +19,8 @@ function App() {
   const [paragraphSize, setParagraphSize] = useState(18);
   const [category, setCategory] = useState("all");
   const [sorting, setSorting] = useState("trending");
+
+  const searchInput = useRef(null);
 
   const APIKEY = import.meta.env.VITE_GOOGLEFONTS_API_KEY;
   const itemsPerPage = 10;
@@ -74,8 +76,7 @@ function App() {
     const matchNumber = variant.match(/\d+/);
     const weight = matchNumber ? parseInt(matchNumber[0], 10) : "normal";
     setFontWeight(weight);
-    const matchStyle = variant.match(/[a-zA-Z]+/);
-    const style = matchStyle ? matchStyle[0] : "normal";
+    const style = variant.includes("italic") ? "italic" : "normal";
     setFontStyle(style);
   };
 
@@ -88,22 +89,22 @@ function App() {
       })
       .filter(Boolean); // Remove null values
 
-    if (
-      JSON.stringify(normalWeights) ==
-      JSON.stringify([
-        "100",
-        "200",
-        "300",
-        "400",
-        "500",
-        "600",
-        "700",
-        "800",
-        "900",
-      ])
-    ) {
-      normalWeights = ["100..900"];
-    }
+    // if (
+    //   JSON.stringify(normalWeights) ==
+    //   JSON.stringify([
+    //     "100",
+    //     "200",
+    //     "300",
+    //     "400",
+    //     "500",
+    //     "600",
+    //     "700",
+    //     "800",
+    //     "900",
+    //   ])
+    // ) {
+    //   normalWeights = ["100..900"];
+    // }
 
     let italicWeights = font.variants
       .map((variant) => {
@@ -113,22 +114,22 @@ function App() {
       })
       .filter(Boolean); // Remove null values
 
-    if (
-      JSON.stringify(italicWeights) ==
-      JSON.stringify([
-        "100",
-        "200",
-        "300",
-        "400",
-        "500",
-        "600",
-        "700",
-        "800",
-        "900",
-      ])
-    ) {
-      italicWeights = ["100..900"];
-    }
+    // if (
+    //   JSON.stringify(italicWeights) ==
+    //   JSON.stringify([
+    //     "100",
+    //     "200",
+    //     "300",
+    //     "400",
+    //     "500",
+    //     "600",
+    //     "700",
+    //     "800",
+    //     "900",
+    //   ])
+    // ) {
+    //   italicWeights = ["100..900"];
+    // }
 
     let variantString = "";
 
@@ -159,12 +160,30 @@ function App() {
         setFonts(favs);
         setTotalResults(favs.length);
       });
+    setCurrentPage(1);
+  };
+
+  const findFont = (e) => {
+    e.preventDefault();
+    const capWords = searchInput.current.value
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+    fetch(
+      `https://www.googleapis.com/webfonts/v1/webfonts?key=${APIKEY}&family=${capWords}`
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        setFonts(data.items);
+        setTotalResults(data.items.length);
+      });
+    setCurrentPage(1);
   };
 
   return (
     <>
-      <div className="grid grid-cols-4">
-        <header className="h-screen sticky top-0 bg-zinc-100 p-10">
+      <div className="grid grid-cols-4 bg-zinc-100">
+        <header className="h-screen sticky top-0 bg-zinc-300 p-10">
           <div className="flex gap-2">
             <label htmlFor="fontSize">Font Size</label>
             <input
@@ -190,13 +209,18 @@ function App() {
               className="block w-full border-1 rounded p-3"
             />
           </div>
-          <button
-            className="flex gap-2 items-center "
-            onClick={() => filterMyFonts()}
-          >
-            <FaHeart />
-            <span>view favorites</span>
-          </button>
+          <div>
+            <form onSubmit={(e) => findFont(e)}>
+              <input
+                type="text"
+                id="search"
+                name="search"
+                placeholder="find by font name"
+                ref={searchInput}
+              />
+              <button type="submit">find</button>
+            </form>
+          </div>
           <div>
             <label htmlFor="category">Category</label>
             <select
@@ -204,7 +228,7 @@ function App() {
               name="category"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="px-4 py-2 bg-gray-200 rounded"
+              className="px-4 py-2 bg-zinc-200 rounded"
             >
               <option value="all">all</option>
               <option value="serif">serif</option>
@@ -221,7 +245,7 @@ function App() {
               name="sort"
               value={sorting}
               onChange={(e) => setSorting(e.target.value)}
-              className="px-4 py-2 bg-gray-200 rounded"
+              className="px-4 py-2 bg-zinc-200 rounded"
             >
               <option value="alpha">alpha</option>
               <option value="date">date</option>
@@ -234,7 +258,7 @@ function App() {
             <button
               onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
-              className="px-4 py-2 bg-gray-200 rounded"
+              className="px-4 py-2 bg-zinc-200 rounded"
             >
               Previous
             </button>
@@ -246,24 +270,35 @@ function App() {
                 setCurrentPage((prev) => Math.min(prev + 1, totalPages))
               }
               disabled={currentPage === totalPages}
-              className="px-4 py-2 bg-gray-200 rounded"
+              className="px-4 py-2 bg-zinc-200 rounded"
             >
               Next
             </button>
           </div>
+
+          <button
+            className="flex gap-2 items-center "
+            onClick={() => filterMyFonts()}
+          >
+            <FaHeart />
+            <span>view favorites</span>
+          </button>
         </header>
-        <div className="col-span-3 grid grid-cols-1 grid-rows-10 gap-10 p-10">
+        <div className="col-span-3 grid grid-cols-1 grid-rows-10 ">
           {currentFonts.map((font) => {
             const variantString = createVariantString(font);
             return (
-              <div key={font.family} className="flex gap-2 items-center">
+              <div
+                key={font.family}
+                className="flex gap-4 items-center p-6 pe-0 hover:bg-white "
+              >
                 <button
-                  className="text-2xl"
+                  className="text-xl text-zinc-500"
                   onClick={() => toggleFav(font.family)}
                 >
                   {myFonts.includes(font.family) ? <FaHeart /> : <FaRegHeart />}
                 </button>
-                <div className="overflow-x-scroll">
+                <div className="overflow-x-scroll overflow-y-clip">
                   <link
                     rel="stylesheet"
                     href={`https://fonts.googleapis.com/css2?family=${font.family.replace(
