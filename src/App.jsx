@@ -1,8 +1,12 @@
 import { useState, useEffect, useRef } from "react";
-import Modal from "./Components/Modal";
 import { FaHeart, FaRegHeart } from "react-icons/fa";
+import { FaChevronLeft, FaChevronRight } from "react-icons/fa6";
+import { IoInvertMode } from "react-icons/io5";
+import Panel from "./Components/Panel";
+import Modal from "./Components/Modal";
 
 function App() {
+  const [theme, setTheme] = useState("light");
   const [myFonts, setmyFonts] = useState([]);
   const [fonts, setFonts] = useState([]);
   const [totalResults, setTotalResults] = useState(0);
@@ -37,9 +41,9 @@ function App() {
   }, []);
 
   useEffect(() => {
-    let url = `https://www.googleapis.com/webfonts/v1/webfonts?key=${APIKEY}&sort=${sorting}`;
+    let url = `https://www.googleapis.com/webfonts/v1/webfonts?key=${APIKEY}&subset=latin&sort=${sorting}`;
     if (category !== "all") {
-      url = `https://www.googleapis.com/webfonts/v1/webfonts?key=${APIKEY}&category=${category}&sort=${sorting}`;
+      url = `https://www.googleapis.com/webfonts/v1/webfonts?key=${APIKEY}&subset=latin&category=${category}&sort=${sorting}`;
     }
     fetch(url)
       .then((res) => res.json())
@@ -53,6 +57,23 @@ function App() {
   useEffect(() => {
     localStorage.setItem("myFonts", JSON.stringify(myFonts));
   }, [myFonts]);
+
+  useEffect(() => {
+    if (localStorage.getItem("theme")) {
+      setTheme(localStorage.getItem("theme"));
+    } else if (
+      window.matchMedia &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches
+    ) {
+      setTheme("dark");
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const newTheme = theme === "light" ? "dark" : "light";
+    setTheme(newTheme);
+    localStorage.setItem("theme", newTheme);
+  };
 
   const openModal = () => {
     setIsModalOpen(true);
@@ -181,103 +202,138 @@ function App() {
   };
 
   return (
-    <>
-      <div className="grid grid-cols-4 bg-zinc-100">
-        <header className="h-screen sticky top-0 bg-zinc-300 p-10">
-          <div className="flex gap-2">
-            <label htmlFor="fontSize">Font Size</label>
-            <input
-              type="range"
-              min="13"
-              max="300"
-              id="fontSize"
-              name="fontSize"
-              value={fontSize}
-              onChange={(e) => setFontSize(e.target.value)}
-            />
-            <p>{fontSize}</p>
+    <div className={theme}>
+      <div className="grid grid-cols-4 bg-neutral-100 text-neutral-950 dark:bg-neutral-900 dark:text-neutral-300">
+        <header className="h-screen sticky top-0 flex flex-col justify-between p-10 bg-neutral-300 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200">
+          <div className="flex gap-4 items-center justify-between">
+            <h1 className="text-2xl font-extralight">My Fonts</h1>
+            <button
+              onClick={toggleTheme}
+              className="p-2 flex items-center gap-2 cursor-pointer "
+            >
+              <IoInvertMode className="text-2xl text-black dark:text-white" />
+              <span className="sr-only">Theme</span>
+            </button>
           </div>
-          <div>
-            <label htmlFor="sampleText" className="block">
-              Sample Text
-            </label>
-            <textarea
-              id="sampleText"
-              name="sampleText"
-              value={sampleText}
-              onChange={(e) => setSampleText(e.target.value)}
-              className="block w-full border-1 rounded p-3"
-            />
-          </div>
-          <div>
-            <form onSubmit={(e) => findFont(e)}>
+          <Panel heading="Explore Fonts">
+            {" "}
+            <div className="flex gap-2 items-center">
+              <label htmlFor="category" className="font-extralight">
+                Category
+              </label>
+              <select
+                id="category"
+                name="category"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="px-4 py-2 rounded-md shadow cursor-pointer  border-1 border-neutral-300 bg-neutral-100 dark:border-neutral-500 dark:bg-neutral-700 dark:text-neutral-50"
+              >
+                <option value="all">all</option>
+                <option value="serif">serif</option>
+                <option value="sans-serif">sans-serif</option>
+                <option value="monospace">monospace</option>
+                <option value="display">display</option>
+                <option value="handwriting">handwriting</option>
+              </select>
+            </div>
+            <div className="flex gap-2 items-center">
+              <label htmlFor="sort" className="font-extralight">
+                Sort by
+              </label>
+              <select
+                id="sort"
+                name="sort"
+                value={sorting}
+                onChange={(e) => setSorting(e.target.value)}
+                className="px-4 py-2 rounded-md shadow cursor-pointer  border-1 border-neutral-300 bg-neutral-100 dark:border-neutral-500 dark:bg-neutral-700 dark:text-neutral-50"
+              >
+                <option value="alpha">alpha</option>
+                <option value="date">date</option>
+                <option value="popularity">popularity</option>
+                {/* <option value="style">style</option> */}
+                <option value="trending">trending</option>
+              </select>
+            </div>
+            <div className="flex gap-2 items-center justify-between mt-2 font-extralight">
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="font-black px-4 py-2 rounded-full cursor-pointer border-1 border-neutral-950 bg-neutral-900 text-neutral-300 dark:bg-neutral-100 dark:text-neutral-800"
+              >
+                <FaChevronLeft />
+                <span className="sr-only">Previous Page</span>
+              </button>
+              <span>
+                Page <span className="font-bold">{currentPage}</span> of{" "}
+                <span className="font-normal">{totalPages}</span>
+              </span>
+              <button
+                onClick={() =>
+                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                }
+                disabled={currentPage === totalPages}
+                className="font-black px-4 py-2 rounded-full cursor-pointer border-1 border-neutral-950 bg-neutral-900 text-neutral-300 dark:bg-neutral-100 dark:text-neutral-800"
+              >
+                <FaChevronRight />
+                <span className="sr-only">Next Page</span>
+              </button>
+            </div>
+          </Panel>
+
+          <Panel heading="Customize Sample Text">
+            <div className="flex gap-2">
+              <label htmlFor="fontSize" className="font-extralight">
+                Font Size
+              </label>
+              <input
+                type="range"
+                min="13"
+                max="300"
+                id="fontSize"
+                name="fontSize"
+                value={fontSize}
+                onChange={(e) => setFontSize(e.target.value)}
+              />
+              <p>{fontSize}</p>
+            </div>
+            <div>
+              <label
+                htmlFor="sampleText"
+                className="block font-extralight mb-2"
+              >
+                Sample Text
+              </label>
+              <textarea
+                id="sampleText"
+                name="sampleText"
+                value={sampleText}
+                onChange={(e) => setSampleText(e.target.value)}
+                className="block w-full min-h-24 rounded-md p-3 border-1 border-neutral-300 bg-neutral-50 dark:border-neutral-600 dark:bg-neutral-900"
+              />
+            </div>
+          </Panel>
+
+          <Panel heading="Find a Font by Name">
+            <form onSubmit={(e) => findFont(e)} className="relative">
               <input
                 type="text"
                 id="search"
                 name="search"
-                placeholder="find by font name"
+                placeholder="font name"
                 ref={searchInput}
+                className="w-full rounded-full p-2 ps-4 border-1 border-neutral-300 bg-neutral-50 dark:border-neutral-600 dark:bg-neutral-900"
               />
-              <button type="submit">find</button>
+              <button
+                type="submit"
+                className="absolute right-0 font-bold px-4 py-2 rounded-full cursor-pointer border-1 border-neutral-950 bg-neutral-900 text-neutral-300 dark:bg-neutral-100 dark:text-neutral-800"
+              >
+                search
+              </button>
             </form>
-          </div>
-          <div>
-            <label htmlFor="category">Category</label>
-            <select
-              id="category"
-              name="category"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="px-4 py-2 bg-zinc-200 rounded"
-            >
-              <option value="all">all</option>
-              <option value="serif">serif</option>
-              <option value="sans-serif">sans-serif</option>
-              <option value="monospace">monospace</option>
-              <option value="display">display</option>
-              <option value="handwriting">handwriting</option>
-            </select>
-          </div>
-          <div>
-            <label htmlFor="sort">Sort by</label>
-            <select
-              id="sort"
-              name="sort"
-              value={sorting}
-              onChange={(e) => setSorting(e.target.value)}
-              className="px-4 py-2 bg-zinc-200 rounded"
-            >
-              <option value="alpha">alpha</option>
-              <option value="date">date</option>
-              <option value="popularity">popularity</option>
-              {/* <option value="style">style</option> */}
-              <option value="trending">trending</option>
-            </select>
-          </div>
-          <div>
-            <button
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-              className="px-4 py-2 bg-zinc-200 rounded"
-            >
-              Previous
-            </button>
-            <span>
-              Page {currentPage} of {totalPages}
-            </span>
-            <button
-              onClick={() =>
-                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-              }
-              disabled={currentPage === totalPages}
-              className="px-4 py-2 bg-zinc-200 rounded"
-            >
-              Next
-            </button>
-          </div>
+          </Panel>
 
           <button
-            className="flex gap-2 items-center "
+            className="w-fit flex gap-2 items-center font-bold px-6 py-2 rounded-full cursor-pointer border-1 border-neutral-950 bg-neutral-900 text-neutral-300 dark:bg-neutral-100 dark:text-neutral-800"
             onClick={() => filterMyFonts()}
           >
             <FaHeart />
@@ -290,10 +346,13 @@ function App() {
             return (
               <div
                 key={font.family}
-                className="flex gap-4 items-center p-6 pe-0 hover:bg-white "
+                className="relative flex gap-4 items-center px-6 pt-8 pb-4 pe-0 hover:bg-white hover:shadow-lg focus-within:bg-white dark:hover:bg-black dark:hover:shadow-neutral-700/50 dark:focus-within:bg-black group"
               >
+                <div className="absolute top-2 hidden group-hover:block group-focus-within:block text-neutral-500 dark:text-neutral-400">
+                  <h2 className="font-extralight text-sm">{font.family}</h2>
+                </div>
                 <button
-                  className="text-xl text-zinc-500"
+                  className="text-xl text-neutral-500 dark:text-neutral-400 cursor-pointer"
                   onClick={() => toggleFav(font.family)}
                 >
                   {myFonts.includes(font.family) ? <FaHeart /> : <FaRegHeart />}
@@ -313,7 +372,10 @@ function App() {
                     }}
                     className="w-max"
                   >
-                    <button onClick={() => showDetails(font)}>
+                    <button
+                      onClick={() => showDetails(font)}
+                      className="cursor-pointer"
+                    >
                       {sampleText}
                     </button>
                   </div>
@@ -404,7 +466,7 @@ function App() {
           </div>
         )}
       </Modal>
-    </>
+    </div>
   );
 }
 
