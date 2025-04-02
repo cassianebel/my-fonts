@@ -5,6 +5,19 @@ import { IoInvertMode } from "react-icons/io5";
 import Panel from "./Components/Panel";
 import Modal from "./Components/Modal";
 
+const samples = [
+  "The quick brown fox jumps over the lazy dog.",
+  "Jovial zebras vex badgers with quirky dancing flips.",
+  "The puzzled sphinx of black quartz judges my vow.",
+  "Kangaroos jump over quizzical zebras munching frozen waffles.",
+  "Dizzy foxes and quirky badgers jolt sleepy humans with zest.",
+  "Lumpy toads quietly zigzag between frozen hedgehogs and javelins.",
+  "Mixing vodka with fuzzy juice perplexes strong-willed zebras.",
+  "Giant frogs quietly zigzag beneath waxy jungle vines, dodging expert hunters.",
+  "Exuberant dogs joyfully zigzag while quaint foxes jump over big hills.",
+  "Jack quickly wove five exquisite baskets from zigzagging bamboo.",
+];
+
 function App() {
   const [theme, setTheme] = useState("light");
   const [myFonts, setmyFonts] = useState([]);
@@ -12,13 +25,15 @@ function App() {
   const [totalResults, setTotalResults] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [sampleText, setSampleText] = useState(
-    "Giant frogs quietly zigzag beneath waxy jungle vines, dodging expert hunters."
+    samples[Math.floor(Math.random() * samples.length)]
   );
   const [fontSize, setFontSize] = useState(32);
   const [fontDetails, setFontDetails] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [fontWeight, setFontWeight] = useState("regular");
-  const [fontStyle, setFontStyle] = useState("normal");
+  const [headingFontWeight, setHeadingFontWeight] = useState("regular");
+  const [headingFontStyle, setHeadingFontStyle] = useState("normal");
+  const [paragraphFontWeight, setParagraphFontWeight] = useState("regular");
+  const [paragraphFontStyle, setParagraphFontStyle] = useState("normal");
   const [headingSize, setHeadingSize] = useState(32);
   const [paragraphSize, setParagraphSize] = useState(18);
   const [category, setCategory] = useState("all");
@@ -93,12 +108,20 @@ function App() {
     return variant.replace(/(\d+)([a-zA-Z]+)/, "$1 $2");
   };
 
-  const setVariant = (variant) => {
+  const setHeadingVariant = (variant) => {
     const matchNumber = variant.match(/\d+/);
     const weight = matchNumber ? parseInt(matchNumber[0], 10) : "normal";
-    setFontWeight(weight);
+    setHeadingFontWeight(weight);
     const style = variant.includes("italic") ? "italic" : "normal";
-    setFontStyle(style);
+    setHeadingFontStyle(style);
+  };
+
+  const setParagraphVariant = (variant) => {
+    const matchNumber = variant.match(/\d+/);
+    const weight = matchNumber ? parseInt(matchNumber[0], 10) : "normal";
+    setParagraphFontWeight(weight);
+    const style = variant.includes("italic") ? "italic" : "normal";
+    setParagraphFontStyle(style);
   };
 
   const createVariantString = (font) => {
@@ -110,23 +133,6 @@ function App() {
       })
       .filter(Boolean); // Remove null values
 
-    // if (
-    //   JSON.stringify(normalWeights) ==
-    //   JSON.stringify([
-    //     "100",
-    //     "200",
-    //     "300",
-    //     "400",
-    //     "500",
-    //     "600",
-    //     "700",
-    //     "800",
-    //     "900",
-    //   ])
-    // ) {
-    //   normalWeights = ["100..900"];
-    // }
-
     let italicWeights = font.variants
       .map((variant) => {
         const weightMatch = variant.match(/\d+/);
@@ -134,23 +140,6 @@ function App() {
         return variant.includes("italic") ? weight : null; // Invlude italic variants
       })
       .filter(Boolean); // Remove null values
-
-    // if (
-    //   JSON.stringify(italicWeights) ==
-    //   JSON.stringify([
-    //     "100",
-    //     "200",
-    //     "300",
-    //     "400",
-    //     "500",
-    //     "600",
-    //     "700",
-    //     "800",
-    //     "900",
-    //   ])
-    // ) {
-    //   italicWeights = ["100..900"];
-    // }
 
     let variantString = "";
 
@@ -165,7 +154,8 @@ function App() {
     return variantString;
   };
 
-  const toggleFav = (font) => {
+  const toggleFav = (e, font) => {
+    e.stopPropagation();
     setmyFonts((prev) =>
       prev.includes(font)
         ? prev.filter((item) => item !== font)
@@ -226,7 +216,7 @@ function App() {
                 name="category"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="px-4 py-2 rounded-md shadow cursor-pointer  border-1 border-neutral-300 bg-neutral-100 dark:border-neutral-500 dark:bg-neutral-700 dark:text-neutral-50"
+                className="px-4 py-2 rounded-md shadow cursor-pointer border-1 border-neutral-300 bg-neutral-100 dark:border-neutral-500 dark:bg-neutral-700 dark:text-neutral-50"
               >
                 <option value="all">all</option>
                 <option value="serif">serif</option>
@@ -258,7 +248,7 @@ function App() {
               <button
                 onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
-                className="font-black px-4 py-2 rounded-full cursor-pointer border-1 border-neutral-950 bg-neutral-900 text-neutral-300 dark:bg-neutral-100 dark:text-neutral-800"
+                className="font-black px-4 py-2 rounded-full cursor-pointer shadow border-1 border-neutral-50 bg-neutral-50 text-neutral-800 hover:bg-white hover:border-white dark:bg-neutral-950 dark:text-neutral-300 dark:border-neutral-950 hover:dark:bg-black hover:dark:border-black"
               >
                 <FaChevronLeft />
                 <span className="sr-only">Previous Page</span>
@@ -272,7 +262,7 @@ function App() {
                   setCurrentPage((prev) => Math.min(prev + 1, totalPages))
                 }
                 disabled={currentPage === totalPages}
-                className="font-black px-4 py-2 rounded-full cursor-pointer border-1 border-neutral-950 bg-neutral-900 text-neutral-300 dark:bg-neutral-100 dark:text-neutral-800"
+                className="font-black px-4 py-2 rounded-full cursor-pointer shadow border-1 border-neutral-50 bg-neutral-50 text-neutral-800 hover:bg-white hover:border-white dark:bg-neutral-950 dark:text-neutral-300 dark:border-neutral-950 hover:dark:bg-black hover:dark:border-black"
               >
                 <FaChevronRight />
                 <span className="sr-only">Next Page</span>
@@ -311,6 +301,16 @@ function App() {
                 className="block w-full min-h-24 rounded-md p-3 border-1 border-neutral-300 bg-neutral-50 dark:border-neutral-600 dark:bg-neutral-900"
               />
             </div>
+            <button
+              className="w-fit flex gap-2 items-center font-bold px-6 py-2 mx-auto rounded-full cursor-pointer shadow border-1 border-neutral-50 bg-neutral-50 text-neutral-800 hover:bg-white hover:border-white dark:bg-neutral-950 dark:text-neutral-300 dark:border-neutral-950 hover:dark:bg-black hover:dark:border-black"
+              onClick={() =>
+                setSampleText(
+                  samples[Math.floor(Math.random() * samples.length)]
+                )
+              }
+            >
+              shuffle sample text
+            </button>
           </Panel>
 
           <Panel heading="Find a Font by Name">
@@ -325,7 +325,7 @@ function App() {
               />
               <button
                 type="submit"
-                className="absolute right-0 font-bold px-4 py-2 rounded-full cursor-pointer border-1 border-neutral-950 bg-neutral-900 text-neutral-300 dark:bg-neutral-100 dark:text-neutral-800"
+                className="absolute right-0 font-bold px-4 py-2 rounded-full cursor-pointer shadow border-1 border-neutral-50 bg-neutral-50 text-neutral-800 hover:bg-white hover:border-white dark:bg-neutral-950 dark:text-neutral-300 dark:border-neutral-950 hover:dark:bg-black hover:dark:border-black"
               >
                 search
               </button>
@@ -333,7 +333,7 @@ function App() {
           </Panel>
 
           <button
-            className="w-fit flex gap-2 items-center font-bold px-6 py-2 rounded-full cursor-pointer border-1 border-neutral-950 bg-neutral-900 text-neutral-300 dark:bg-neutral-100 dark:text-neutral-800"
+            className="w-fit flex gap-2 items-center font-bold px-6 py-2 mx-auto rounded-full cursor-pointer shadow border-1 border-neutral-50 bg-neutral-50 text-neutral-800 hover:bg-white hover:border-white dark:bg-neutral-950 dark:text-neutral-300 dark:border-neutral-950 hover:dark:bg-black hover:dark:border-black"
             onClick={() => filterMyFonts()}
           >
             <FaHeart />
@@ -345,6 +345,7 @@ function App() {
             const variantString = createVariantString(font);
             return (
               <div
+                onClick={() => showDetails(font)}
                 key={font.family}
                 className="relative flex gap-4 items-center px-6 pt-8 pb-4 pe-0 hover:bg-white hover:shadow-lg focus-within:bg-white dark:hover:bg-black dark:hover:shadow-neutral-700/50 dark:focus-within:bg-black group"
               >
@@ -353,9 +354,23 @@ function App() {
                 </div>
                 <button
                   className="text-xl text-neutral-500 dark:text-neutral-400 cursor-pointer"
-                  onClick={() => toggleFav(font.family)}
+                  onClick={(e) => toggleFav(e, font.family)}
                 >
-                  {myFonts.includes(font.family) ? <FaHeart /> : <FaRegHeart />}
+                  {myFonts.includes(font.family) ? (
+                    <>
+                      <FaHeart />
+                      <span className="sr-only">
+                        remove {font.family} from favorites
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <FaRegHeart />
+                      <span className="sr-only">
+                        add {font.family} to favorites
+                      </span>
+                    </>
+                  )}
                 </button>
                 <div className="overflow-x-scroll overflow-y-clip">
                   <link
@@ -365,20 +380,16 @@ function App() {
                       "+"
                     )}:${variantString}&display=swap`} // Correct format
                   />
-                  <div
+                  <button
                     style={{
                       fontFamily: `"${font.family}"`,
                       fontSize: fontSize + "px",
                     }}
-                    className="w-max"
+                    onClick={() => showDetails(font)}
+                    className="min-w-full w-max cursor-pointer"
                   >
-                    <button
-                      onClick={() => showDetails(font)}
-                      className="cursor-pointer"
-                    >
-                      {sampleText}
-                    </button>
-                  </div>
+                    {sampleText}
+                  </button>
                 </div>
               </div>
             );
@@ -388,68 +399,131 @@ function App() {
       <Modal isOpen={isModalOpen} onClose={closeModal}>
         {fontDetails && (
           <div className="grid grid-cols-4">
-            <div className="border-r-1 me-4 pe-4">
-              <p>{fontDetails.family}</p>
-              <div className="flex gap-2">
-                <label htmlFor="headingSize">Heading Size</label>
-                <input
-                  type="range"
-                  min="13"
-                  max="300"
-                  id="headingSize"
-                  name="headingSize"
-                  value={headingSize}
-                  onChange={(e) => setHeadingSize(e.target.value)}
-                />
-                <p>{headingSize}</p>
+            <div className="flex flex-col gap-4">
+              <div className="flex gap-4">
+                <button
+                  className="text-xl text-neutral-500 dark:text-neutral-400 cursor-pointer"
+                  onClick={(e) => toggleFav(e, fontDetails.family)}
+                >
+                  {myFonts.includes(fontDetails.family) ? (
+                    <>
+                      <FaHeart />
+                      <span className="sr-only">
+                        remove {fontDetails.family} from favorites
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <FaRegHeart />
+                      <span className="sr-only">
+                        add {fontDetails.family} to favorites
+                      </span>
+                    </>
+                  )}
+                </button>
+                <h2 className="font-extralight text-2xl">
+                  {fontDetails.family}
+                </h2>
               </div>
-              <div className="flex gap-2">
-                <label htmlFor="paragraphSize">Paragraph Size</label>
-                <input
-                  type="range"
-                  min="1"
-                  max="50"
-                  id="paragraphSize"
-                  name="paragraphSize"
-                  value={paragraphSize}
-                  onChange={(e) => setParagraphSize(e.target.value)}
-                />
-                <p>{paragraphSize}</p>
-              </div>
-              {fontDetails.variants.map((variant) => (
-                <label key={variant} htmlFor={variant} className="block">
+
+              <Panel heading="Heading">
+                <div className="flex gap-2 mb-2">
+                  <label htmlFor="headingSize" className="font-extralight">
+                    Size
+                  </label>
                   <input
-                    type="radio"
-                    name="variant"
-                    id={variant}
-                    value={variant}
-                    onChange={() => setVariant(variant)}
-                    className="me-2"
+                    type="range"
+                    min="13"
+                    max="300"
+                    id="headingSize"
+                    name="headingSize"
+                    value={headingSize}
+                    onChange={(e) => setHeadingSize(e.target.value)}
                   />
-                  {formatFontVariantString(variant)}
-                </label>
-              ))}
+                  <p>{headingSize}</p>
+                </div>
+                <fieldset>
+                  <legend className="font-extralight mb-2">Style</legend>
+                  {fontDetails.variants.map((variant) => (
+                    <label
+                      key={"h" + variant}
+                      htmlFor={"h" + variant}
+                      className="inline-block m-2 px-3 py-1 rounded-full cursor-pointer shadow border-1 border-neutral-50 bg-neutral-50 text-neutral-800 hover:bg-white hover:border-white has-checked:bg-blue-300 dark:bg-neutral-950 dark:text-neutral-300 dark:border-neutral-950 hover:dark:bg-black hover:dark:border-black dark:has-checked:bg-blue-700"
+                    >
+                      <input
+                        type="radio"
+                        name="hvariant"
+                        id={"h" + variant}
+                        value={variant}
+                        onChange={() => setHeadingVariant(variant)}
+                        className="hidden"
+                      />
+                      {formatFontVariantString(variant)}
+                    </label>
+                  ))}
+                </fieldset>
+              </Panel>
+              <Panel heading="Paragraph">
+                <div className="flex gap-2">
+                  <label htmlFor="paragraphSize" className="font-extralight">
+                    Size
+                  </label>
+                  <input
+                    type="range"
+                    min="1"
+                    max="50"
+                    id="paragraphSize"
+                    name="paragraphSize"
+                    value={paragraphSize}
+                    onChange={(e) => setParagraphSize(e.target.value)}
+                  />
+                  <p>{paragraphSize}</p>
+                </div>
+                <fieldset>
+                  <legend className="font-extralight">Style</legend>
+                  {fontDetails.variants.map((variant) => (
+                    <label
+                      key={"p" + variant}
+                      htmlFor={"p" + variant}
+                      className="inline-block m-2 px-3 py-1 rounded-full cursor-pointer shadow border-1 border-neutral-50 bg-neutral-50 text-neutral-800 hover:bg-white hover:border-white has-checked:bg-blue-300 dark:bg-neutral-950 dark:text-neutral-300 dark:border-neutral-950 hover:dark:bg-black hover:dark:border-black dark:has-checked:bg-blue-700"
+                    >
+                      <input
+                        type="radio"
+                        name="pvariant"
+                        id={"p" + variant}
+                        value={variant}
+                        onChange={() => setParagraphVariant(variant)}
+                        className="hidden"
+                      />
+                      {formatFontVariantString(variant)}
+                    </label>
+                  ))}
+                </fieldset>
+              </Panel>
             </div>
+
             <div
-              className="col-span-3"
+              className="col-span-3 ms-14"
               style={{
                 fontFamily: `"${fontDetails.family}"`,
-                fontWeight: fontWeight,
-                fontStyle: fontStyle,
               }}
             >
-              <h2
+              <h3
                 className="my-8"
                 style={{
+                  fontWeight: headingFontWeight,
+                  fontStyle: headingFontStyle,
                   fontSize: headingSize + "px",
                 }}
               >
                 Quirky Wizards Juggle Flaming Zebras in Daring Midnight
                 Spectacle
-              </h2>
+              </h3>
               <p
                 className=""
                 style={{
+                  fontWeight: paragraphFontWeight,
+                  fontStyle: paragraphFontStyle,
                   fontSize: paragraphSize + "px",
                 }}
               >

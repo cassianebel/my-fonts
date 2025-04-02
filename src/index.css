@@ -3,6 +3,15 @@
 
 @theme {
   --font-sans: "Inter", "sans-serif";
+  --animate-fadeIn: fadeIn 300ms ease-in-out;
+  @keyframes fadeIn {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 100;
+    }
+  }
 }
 
 @custom-variant dark (&:where(.dark, .dark *));
