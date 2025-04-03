@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { FaHeart, FaRegHeart } from "react-icons/fa";
-import { FaChevronLeft, FaChevronRight } from "react-icons/fa6";
+import { FaChevronLeft, FaChevronRight, FaRegCopy } from "react-icons/fa6";
 import { IoInvertMode } from "react-icons/io5";
 import Panel from "./Components/Panel";
 import Modal from "./Components/Modal";
@@ -36,6 +36,8 @@ function App() {
   const [paragraphFontStyle, setParagraphFontStyle] = useState("normal");
   const [headingSize, setHeadingSize] = useState(32);
   const [paragraphSize, setParagraphSize] = useState(18);
+  const [copyType, setCopyType] = useState("cssLink");
+  const [copying, setCopying] = useState("copy");
   const [category, setCategory] = useState("all");
   const [sorting, setSorting] = useState("trending");
 
@@ -191,10 +193,44 @@ function App() {
     setCurrentPage(1);
   };
 
+  const shuffleSampleText = () => {
+    let newSample;
+    do {
+      newSample = samples[Math.floor(Math.random() * samples.length)];
+    } while (newSample === sampleText); // Keep shuffling until it's different
+
+    setSampleText(newSample);
+  };
+
+  const handleCopy = (fontDetails) => {
+    setCopying("copying");
+    const copy =
+      copyType === "cssLink"
+        ? `<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=${fontDetails.family.replace(
+            /\s/g,
+            "+"
+          )}:${createVariantString(fontDetails)}&display=swap" />`
+        : `@import url('https://fonts.googleapis.com/css2?family=${fontDetails.family.replace(
+            /\s/g,
+            "+"
+          )}:${createVariantString(fontDetails)}&display=swap');`;
+
+    navigator.clipboard
+      .writeText(copy)
+      .then(() => setCopying("copied!"))
+      .catch((err) => console.error("Failed to copy:", err));
+
+    setTimeout(() => {
+      setCopying("copy");
+    }, 800);
+  };
+
   return (
     <div className={theme}>
-      <div className="grid grid-cols-4 bg-neutral-100 text-neutral-950 dark:bg-neutral-900 dark:text-neutral-300">
-        <header className="h-screen sticky top-0 flex flex-col justify-between p-10 bg-neutral-300 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200">
+      <div className="grid grid-cols-4 bg-neutral-100 text-neutral-950 dark:bg-neutral-900 dark:text-neutral-400">
+        <header className="h-screen overflow-y-scroll  sticky top-0 flex flex-col justify-between gap-4 p-10 bg-neutral-300 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
           <div className="flex gap-4 items-center justify-between">
             <h1 className="text-2xl font-extralight">My Fonts</h1>
             <button
@@ -248,7 +284,7 @@ function App() {
               <button
                 onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
-                className="font-black px-4 py-2 rounded-full cursor-pointer shadow border-1 border-neutral-50 bg-neutral-50 text-neutral-800 hover:bg-white hover:border-white dark:bg-neutral-950 dark:text-neutral-300 dark:border-neutral-950 hover:dark:bg-black hover:dark:border-black"
+                className="font-black px-4 py-2 rounded-full cursor-pointer shadow border-1 border-electric-violet-300 bg-electric-violet-300 text-neutral-900 hover:bg-electric-violet-400 hover:border-electric-violet-400 dark:bg-electric-violet-900 dark:text-neutral-100 dark:border-electric-violet-900 hover:dark:bg-electric-violet-800 hover:dark:border-electric-violet-800 transition-colors duration-300"
               >
                 <FaChevronLeft />
                 <span className="sr-only">Previous Page</span>
@@ -262,7 +298,7 @@ function App() {
                   setCurrentPage((prev) => Math.min(prev + 1, totalPages))
                 }
                 disabled={currentPage === totalPages}
-                className="font-black px-4 py-2 rounded-full cursor-pointer shadow border-1 border-neutral-50 bg-neutral-50 text-neutral-800 hover:bg-white hover:border-white dark:bg-neutral-950 dark:text-neutral-300 dark:border-neutral-950 hover:dark:bg-black hover:dark:border-black"
+                className="font-black px-4 py-2 rounded-full cursor-pointer shadow border-1 border-electric-violet-300 bg-electric-violet-300 text-neutral-900 hover:bg-electric-violet-400 hover:border-electric-violet-400 dark:bg-electric-violet-900 dark:text-neutral-100 dark:border-electric-violet-900 hover:dark:bg-electric-violet-800 hover:dark:border-electric-violet-800 transition-colors duration-300"
               >
                 <FaChevronRight />
                 <span className="sr-only">Next Page</span>
@@ -283,6 +319,7 @@ function App() {
                 name="fontSize"
                 value={fontSize}
                 onChange={(e) => setFontSize(e.target.value)}
+                className="accent-electric-violet-400 dark:accent-electric-violet-700"
               />
               <p>{fontSize}</p>
             </div>
@@ -298,16 +335,12 @@ function App() {
                 name="sampleText"
                 value={sampleText}
                 onChange={(e) => setSampleText(e.target.value)}
-                className="block w-full min-h-24 rounded-md p-3 border-1 border-neutral-300 bg-neutral-50 dark:border-neutral-600 dark:bg-neutral-900"
+                className="block w-full min-h-24 max-h-40 rounded-md p-3 border-1 border-neutral-300 bg-neutral-50 dark:border-neutral-600 dark:bg-neutral-900"
               />
             </div>
             <button
-              className="w-fit flex gap-2 items-center font-bold px-6 py-2 mx-auto rounded-full cursor-pointer shadow border-1 border-neutral-50 bg-neutral-50 text-neutral-800 hover:bg-white hover:border-white dark:bg-neutral-950 dark:text-neutral-300 dark:border-neutral-950 hover:dark:bg-black hover:dark:border-black"
-              onClick={() =>
-                setSampleText(
-                  samples[Math.floor(Math.random() * samples.length)]
-                )
-              }
+              className="w-fit flex gap-2 items-center font-bold px-6 py-2 mx-auto rounded-full cursor-pointer shadow border-1 border-electric-violet-300 bg-electric-violet-300 text-neutral-900 hover:bg-electric-violet-400 hover:border-electric-violet-400 dark:bg-electric-violet-900 dark:text-neutral-100 dark:border-electric-violet-900 hover:dark:bg-electric-violet-800 hover:dark:border-electric-violet-800 transition-colors duration-300"
+              onClick={() => shuffleSampleText()}
             >
               shuffle sample text
             </button>
@@ -325,7 +358,7 @@ function App() {
               />
               <button
                 type="submit"
-                className="absolute right-0 font-bold px-4 py-2 rounded-full cursor-pointer shadow border-1 border-neutral-50 bg-neutral-50 text-neutral-800 hover:bg-white hover:border-white dark:bg-neutral-950 dark:text-neutral-300 dark:border-neutral-950 hover:dark:bg-black hover:dark:border-black"
+                className="absolute right-0 font-bold px-4 py-2 rounded-full cursor-pointer shadow border-1 border-electric-violet-300 bg-electric-violet-300 text-neutral-900 hover:bg-electric-violet-400 hover:border-electric-violet-400 dark:bg-electric-violet-900 dark:text-neutral-100 dark:border-electric-violet-900 hover:dark:bg-electric-violet-800 hover:dark:border-electric-violet-800 transition-colors duration-300"
               >
                 search
               </button>
@@ -333,7 +366,7 @@ function App() {
           </Panel>
 
           <button
-            className="w-fit flex gap-2 items-center font-bold px-6 py-2 mx-auto rounded-full cursor-pointer shadow border-1 border-neutral-50 bg-neutral-50 text-neutral-800 hover:bg-white hover:border-white dark:bg-neutral-950 dark:text-neutral-300 dark:border-neutral-950 hover:dark:bg-black hover:dark:border-black"
+            className="w-fit flex gap-2 items-center font-bold px-6 py-2 mx-auto rounded-full cursor-pointer shadow border-1 border-electric-violet-300 bg-electric-violet-300 text-neutral-900 hover:bg-electric-violet-400 hover:border-electric-violet-400 dark:bg-electric-violet-900 dark:text-neutral-100 dark:border-electric-violet-900 hover:dark:bg-electric-violet-800 hover:dark:border-electric-violet-800 transition-colors duration-300"
             onClick={() => filterMyFonts()}
           >
             <FaHeart />
@@ -347,7 +380,7 @@ function App() {
               <div
                 onClick={() => showDetails(font)}
                 key={font.family}
-                className="relative flex gap-4 items-center px-6 pt-8 pb-4 pe-0 hover:bg-white hover:shadow-lg focus-within:bg-white dark:hover:bg-black dark:hover:shadow-neutral-700/50 dark:focus-within:bg-black group"
+                className="relative flex gap-4 items-center px-6 pt-8 pb-4 pe-0 hover:bg-white hover:shadow-lg focus-within:bg-white dark:hover:bg-black hover:shadow-electric-violet-900/25 dark:focus-within:bg-black group"
               >
                 <div className="absolute top-2 hidden group-hover:block group-focus-within:block text-neutral-500 dark:text-neutral-400">
                   <h2 className="font-extralight text-sm">{font.family}</h2>
@@ -378,7 +411,7 @@ function App() {
                     href={`https://fonts.googleapis.com/css2?family=${font.family.replace(
                       /\s/g,
                       "+"
-                    )}:${variantString}&display=swap`} // Correct format
+                    )}:${variantString}&display=swap`}
                   />
                   <button
                     style={{
@@ -400,7 +433,7 @@ function App() {
         {fontDetails && (
           <div className="grid grid-cols-4">
             <div className="flex flex-col gap-4">
-              <div className="flex gap-4">
+              <div className="flex items-center gap-4">
                 <button
                   className="text-xl text-neutral-500 dark:text-neutral-400 cursor-pointer"
                   onClick={(e) => toggleFav(e, fontDetails.family)}
@@ -424,6 +457,13 @@ function App() {
                 <h2 className="font-extralight text-2xl">
                   {fontDetails.family}
                 </h2>
+                <button
+                  onClick={toggleTheme}
+                  className="ms-auto cursor-pointer"
+                >
+                  <IoInvertMode className="text-2xl text-black dark:text-white" />
+                  <span className="sr-only">Theme</span>
+                </button>
               </div>
 
               <Panel heading="Heading">
@@ -439,6 +479,7 @@ function App() {
                     name="headingSize"
                     value={headingSize}
                     onChange={(e) => setHeadingSize(e.target.value)}
+                    className="accent-electric-violet-400 dark:accent-electric-violet-700"
                   />
                   <p>{headingSize}</p>
                 </div>
@@ -448,7 +489,7 @@ function App() {
                     <label
                       key={"h" + variant}
                       htmlFor={"h" + variant}
-                      className="inline-block m-2 px-3 py-1 rounded-full cursor-pointer shadow border-1 border-neutral-50 bg-neutral-50 text-neutral-800 hover:bg-white hover:border-white has-checked:bg-blue-300 dark:bg-neutral-950 dark:text-neutral-300 dark:border-neutral-950 hover:dark:bg-black hover:dark:border-black dark:has-checked:bg-blue-700"
+                      className="inline-block m-2 px-3 py-1 rounded-full cursor-pointer shadow border-neutral-50 bg-neutral-50 text-neutral-800 hover:bg-white hover:border-white has-checked:bg-electric-violet-300 has-checked:border-electric-violet-300 dark:bg-neutral-950 dark:text-neutral-300 dark:border-neutral-950 hover:dark:bg-black hover:dark:border-black dark:has-checked:bg-electric-violet-700 dark:has-checked:border-electric-violet-700 has-checked:shadow-none has-checked:inset-shadow-sm inset-shadow-electric-violet-500 dark:inset-shadow-electric-violet-950"
                     >
                       <input
                         type="radio"
@@ -476,6 +517,7 @@ function App() {
                     name="paragraphSize"
                     value={paragraphSize}
                     onChange={(e) => setParagraphSize(e.target.value)}
+                    className="accent-electric-violet-400 dark:accent-electric-violet-700"
                   />
                   <p>{paragraphSize}</p>
                 </div>
@@ -485,7 +527,7 @@ function App() {
                     <label
                       key={"p" + variant}
                       htmlFor={"p" + variant}
-                      className="inline-block m-2 px-3 py-1 rounded-full cursor-pointer shadow border-1 border-neutral-50 bg-neutral-50 text-neutral-800 hover:bg-white hover:border-white has-checked:bg-blue-300 dark:bg-neutral-950 dark:text-neutral-300 dark:border-neutral-950 hover:dark:bg-black hover:dark:border-black dark:has-checked:bg-blue-700"
+                      className="inline-block m-2 px-3 py-1 rounded-full cursor-pointer shadow border-neutral-50 bg-neutral-50 text-neutral-800 hover:bg-white hover:border-white has-checked:bg-electric-violet-300 has-checked:border-electric-violet-300 dark:bg-neutral-950 dark:text-neutral-300 dark:border-neutral-950 hover:dark:bg-black hover:dark:border-black dark:has-checked:bg-electric-violet-700 dark:has-checked:border-electric-violet-700 has-checked:shadow-none has-checked:inset-shadow-sm inset-shadow-electric-violet-500 dark:inset-shadow-electric-violet-950"
                     >
                       <input
                         type="radio"
@@ -502,40 +544,98 @@ function App() {
               </Panel>
             </div>
 
-            <div
-              className="col-span-3 ms-14"
-              style={{
-                fontFamily: `"${fontDetails.family}"`,
-              }}
-            >
-              <h3
-                className="my-8"
-                style={{
-                  fontWeight: headingFontWeight,
-                  fontStyle: headingFontStyle,
-                  fontSize: headingSize + "px",
-                }}
-              >
-                Quirky Wizards Juggle Flaming Zebras in Daring Midnight
-                Spectacle
-              </h3>
-              <p
-                className=""
-                style={{
-                  fontWeight: paragraphFontWeight,
-                  fontStyle: paragraphFontStyle,
-                  fontSize: paragraphSize + "px",
-                }}
-              >
-                Under the glow of a violet moon, a troupe of eccentric wizards
-                mesmerized the crowd by juggling flaming zebras with astonishing
-                precision. Spectators gasped as the striped creatures twirled
-                through the air, their fiery manes casting wild shadows across
-                the enchanted forest. Despite the chaotic display, not a single
-                whisker was singed, proving once again that magic—when wielded
-                by the truly audacious—can turn the impossible into a
-                breathtaking reality.
-              </p>
+            <div className="col-span-3 flex flex-col gap-20 ms-14">
+              <div>
+                <h3
+                  className="my-8"
+                  style={{
+                    fontFamily: `"${fontDetails.family}"`,
+                    fontWeight: headingFontWeight,
+                    fontStyle: headingFontStyle,
+                    fontSize: headingSize + "px",
+                  }}
+                >
+                  Quirky Wizards Juggle Flaming Zebras in Daring Midnight
+                  Spectacle
+                </h3>
+                <p
+                  className=""
+                  style={{
+                    fontFamily: `"${fontDetails.family}"`,
+                    fontWeight: paragraphFontWeight,
+                    fontStyle: paragraphFontStyle,
+                    fontSize: paragraphSize + "px",
+                  }}
+                >
+                  Under the glow of a violet moon, a troupe of eccentric wizards
+                  mesmerized the crowd by juggling flaming zebras with
+                  astonishing precision. Spectators gasped as the striped
+                  creatures twirled through the air, their fiery manes casting
+                  wild shadows across the enchanted forest. Despite the chaotic
+                  display, not a single whisker was singed, proving once again
+                  that magic—when wielded by the truly audacious—can turn the
+                  impossible into a breathtaking reality.
+                </p>
+              </div>
+              <Panel heading="Code">
+                <div className="flex justify-between gap-10">
+                  <fieldset>
+                    <label
+                      htmlFor="cssLink"
+                      className="inline-block m-2 px-3 py-1 rounded-full cursor-pointer shadow border-neutral-50 bg-neutral-50 text-neutral-800 hover:bg-white hover:border-white has-checked:bg-electric-violet-300 has-checked:border-electric-violet-300 dark:bg-neutral-950 dark:text-neutral-300 dark:border-neutral-950 hover:dark:bg-black hover:dark:border-black dark:has-checked:bg-electric-violet-700 dark:has-checked:border-electric-violet-700 has-checked:shadow-none has-checked:inset-shadow-sm inset-shadow-electric-violet-500 dark:inset-shadow-electric-violet-950"
+                    >
+                      <input
+                        id="cssLink"
+                        name="cssType"
+                        value="cssLink"
+                        type="radio"
+                        checked={copyType === "cssLink"}
+                        onChange={() => setCopyType("cssLink")}
+                        className="hidden"
+                      />
+                      {"<link>"}
+                    </label>
+                    <label
+                      htmlFor="cssImport"
+                      className="inline-block m-2 px-3 py-1 rounded-full cursor-pointer shadow border-neutral-50 bg-neutral-50 text-neutral-800 hover:bg-white hover:border-white has-checked:bg-electric-violet-300 has-checked:border-electric-violet-300 dark:bg-neutral-950 dark:text-neutral-300 dark:border-neutral-950 hover:dark:bg-black hover:dark:border-black dark:has-checked:bg-electric-violet-700 dark:has-checked:border-electric-violet-700 has-checked:shadow-none has-checked:inset-shadow-sm inset-shadow-electric-violet-500 dark:inset-shadow-electric-violet-950"
+                    >
+                      <input
+                        id="cssImport"
+                        name="cssType"
+                        value="cssImport"
+                        type="radio"
+                        checked={copyType === "cssImport"}
+                        onChange={() => setCopyType("cssImport")}
+                        className="hidden"
+                      />
+                      {"@import"}
+                    </label>
+                  </fieldset>
+
+                  <button
+                    onClick={() => handleCopy(fontDetails)}
+                    className="flex items-center gap-2 w-fit font-bold px-4 py-2 rounded-full cursor-pointer shadow border-1 border-electric-violet-300 bg-electric-violet-300 text-neutral-900 hover:bg-electric-violet-400 hover:border-electric-violet-400 dark:bg-electric-violet-900 dark:text-neutral-100 dark:border-electric-violet-900 hover:dark:bg-electric-violet-800 hover:dark:border-electric-violet-800 transition-colors duration-300"
+                  >
+                    <FaRegCopy />
+                    <span>{copying}</span>
+                  </button>
+                </div>
+                <pre className="p-4 rounded-lg bg-neutral-50 dark:bg-neutral-900">
+                  <code className="block text-sm whitespace-pre-wrap">
+                    {copyType === "cssLink"
+                      ? `<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=${fontDetails.family.replace(
+                          /\s/g,
+                          "+"
+                        )}:${createVariantString(fontDetails)}&display=swap" />`
+                      : `@import url('https://fonts.googleapis.com/css2?family=family=${fontDetails.family.replace(
+                          /\s/g,
+                          "+"
+                        )}:${createVariantString(fontDetails)}&display=swap');`}
+                  </code>
+                </pre>
+              </Panel>
             </div>
           </div>
         )}

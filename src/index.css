@@ -1,8 +1,21 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Victor+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
 @import "tailwindcss";
 
 @theme {
   --font-sans: "Inter", "sans-serif";
+  --font-mono: "Victor Mono";
+  --color-electric-violet-50: #f3f2ff;
+  --color-electric-violet-100: #e9e8ff;
+  --color-electric-violet-200: #d6d3ff;
+  --color-electric-violet-300: #b8b0ff;
+  --color-electric-violet-400: #9584ff;
+  --color-electric-violet-500: #7352ff;
+  --color-electric-violet-600: #6f40f9;
+  --color-electric-violet-700: #541de4;
+  --color-electric-violet-800: #4617c0;
+  --color-electric-violet-900: #3a159d;
+  --color-electric-violet-950: #210b6a;
   --animate-fadeIn: fadeIn 300ms ease-in-out;
   @keyframes fadeIn {
     0% {
