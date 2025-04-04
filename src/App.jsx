@@ -1,9 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { FaHeart, FaRegHeart } from "react-icons/fa";
 import { FaChevronLeft, FaChevronRight, FaRegCopy } from "react-icons/fa6";
-import { IoInvertMode } from "react-icons/io5";
 import Panel from "./Components/Panel";
 import Modal from "./Components/Modal";
+import FavButton from "./Components/FavButton";
+import ThemeButton from "./Components/ThemeButton";
+import RangeInput from "./Components/RangeInput";
+import SelectMenu from "./Components/SelectMenu";
+import PillButton from "./Components/PillButton";
 
 const samples = [
   "The quick brown fox jumps over the lazy dog.",
@@ -18,9 +22,20 @@ const samples = [
   "Jack quickly wove five exquisite baskets from zigzagging bamboo.",
 ];
 
+const categories = [
+  "all",
+  "serif",
+  "sans-serif",
+  "monospace",
+  "display",
+  "handwriting",
+];
+
+const sortMethods = ["alpha", "date", "popularity", "trending"];
+
 function App() {
   const [theme, setTheme] = useState("light");
-  const [myFonts, setmyFonts] = useState([]);
+  const [myFonts, setMyFonts] = useState([]);
   const [fonts, setFonts] = useState([]);
   const [totalResults, setTotalResults] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
@@ -55,7 +70,7 @@ function App() {
   useEffect(() => {
     const storedFonts = JSON.parse(localStorage.getItem("myFonts"));
     if (storedFonts && storedFonts.length > 0) {
-      setmyFonts(storedFonts);
+      setMyFonts(storedFonts);
     }
   }, []);
 
@@ -87,12 +102,6 @@ function App() {
       setTheme("dark");
     }
   }, []);
-
-  const toggleTheme = () => {
-    const newTheme = theme === "light" ? "dark" : "light";
-    setTheme(newTheme);
-    localStorage.setItem("theme", newTheme);
-  };
 
   const openModal = () => {
     setIsModalOpen(true);
@@ -150,13 +159,15 @@ function App() {
     // if Variable Font get weights from axis start and end
     if (font.axes !== undefined) {
       const weightAxis = font.axes.find((axis) => axis.tag === "wght");
-      font.variants.map((variant) => {
-        if (variant === "regular") {
-          normalWeights = [`${weightAxis.start}..${weightAxis.end}`];
-        } else if (variant === "italic") {
-          italicWeights = [`${weightAxis.start}..${weightAxis.end}`];
-        }
-      });
+      if (weightAxis !== undefined) {
+        font.variants.map((variant) => {
+          if (variant === "regular") {
+            normalWeights = [`${weightAxis.start}..${weightAxis.end}`];
+          } else if (variant === "italic") {
+            italicWeights = [`${weightAxis.start}..${weightAxis.end}`];
+          }
+        });
+      }
     }
 
     let variantString = "";
@@ -170,15 +181,6 @@ function App() {
     }
 
     return variantString;
-  };
-
-  const toggleFav = (e, font) => {
-    e.stopPropagation();
-    setmyFonts((prev) =>
-      prev.includes(font)
-        ? prev.filter((item) => item !== font)
-        : [...prev, font]
-    );
   };
 
   const filterMyFonts = () => {
@@ -196,19 +198,21 @@ function App() {
 
   const findFont = (e) => {
     e.preventDefault();
-    const capWords = searchInput.current.value
-      .split(" ")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
-    fetch(
-      `https://www.googleapis.com/webfonts/v1/webfonts?key=${APIKEY}&capability=VF&family=${capWords}`
-    )
-      .then((res) => res.json())
-      .then((data) => {
-        setFonts(data.items);
-        setTotalResults(data.items.length);
-      });
-    setCurrentPage(1);
+    if (searchInput.current?.value?.trim()) {
+      const capWords = searchInput.current.value
+        .split(" ")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ");
+      fetch(
+        `https://www.googleapis.com/webfonts/v1/webfonts?key=${APIKEY}&capability=VF&family=${capWords}`
+      )
+        .then((res) => res.json())
+        .then((data) => {
+          setFonts(data.items);
+          setTotalResults(data.items.length);
+        });
+      setCurrentPage(1);
+    }
   };
 
   const shuffleSampleText = () => {
@@ -251,96 +255,62 @@ function App() {
         <header className="h-screen overflow-y-scroll  sticky top-0 flex flex-col justify-between gap-4 p-10 bg-neutral-300 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
           <div className="flex gap-4 items-center justify-between">
             <h1 className="text-2xl font-extralight">My Fonts</h1>
-            <button
-              onClick={toggleTheme}
-              className="p-2 flex items-center gap-2 cursor-pointer "
-            >
-              <IoInvertMode className="text-2xl text-black dark:text-white" />
-              <span className="sr-only">Theme</span>
-            </button>
+            <ThemeButton theme={theme} setTheme={setTheme} />
           </div>
           <Panel heading="Explore Fonts">
-            {" "}
-            <div className="flex gap-2 items-center">
-              <label htmlFor="category" className="font-extralight">
-                Category
-              </label>
-              <select
-                id="category"
-                name="category"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="px-4 py-2 rounded-md shadow cursor-pointer border-1 border-neutral-300 bg-neutral-100 dark:border-neutral-500 dark:bg-neutral-700 dark:text-neutral-50"
-              >
-                <option value="all">all</option>
-                <option value="serif">serif</option>
-                <option value="sans-serif">sans-serif</option>
-                <option value="monospace">monospace</option>
-                <option value="display">display</option>
-                <option value="handwriting">handwriting</option>
-              </select>
-            </div>
-            <div className="flex gap-2 items-center">
-              <label htmlFor="sort" className="font-extralight">
-                Sort by
-              </label>
-              <select
-                id="sort"
-                name="sort"
-                value={sorting}
-                onChange={(e) => setSorting(e.target.value)}
-                className="px-4 py-2 rounded-md shadow cursor-pointer  border-1 border-neutral-300 bg-neutral-100 dark:border-neutral-500 dark:bg-neutral-700 dark:text-neutral-50"
-              >
-                <option value="alpha">alpha</option>
-                <option value="date">date</option>
-                <option value="popularity">popularity</option>
-                {/* <option value="style">style</option> */}
-                <option value="trending">trending</option>
-              </select>
-            </div>
+            <SelectMenu
+              id="category"
+              name="category"
+              label="Category"
+              value={category}
+              handleChange={setCategory}
+              options={categories}
+            />
+            <SelectMenu
+              id="sort"
+              name="sort"
+              label="Sort by"
+              value={sorting}
+              handleChange={setSorting}
+              options={sortMethods}
+            />
             <div className="flex gap-2 items-center justify-between mt-2 font-extralight">
-              <button
-                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              <PillButton
+                type="button"
+                clickHandler={() =>
+                  setCurrentPage((prev) => Math.max(prev - 1, 1))
+                }
                 disabled={currentPage === 1}
-                className="font-black px-4 py-2 rounded-full cursor-pointer shadow border-1 border-electric-violet-300 bg-electric-violet-300 text-neutral-900 hover:bg-electric-violet-400 hover:border-electric-violet-400 dark:bg-electric-violet-900 dark:text-neutral-100 dark:border-electric-violet-900 hover:dark:bg-electric-violet-800 hover:dark:border-electric-violet-800 transition-colors duration-300"
-              >
-                <FaChevronLeft />
-                <span className="sr-only">Previous Page</span>
-              </button>
+                icon={<FaChevronLeft />}
+                text="Previous Page"
+                srOnly={true}
+              />
               <span>
                 Page <span className="font-bold">{currentPage}</span> of{" "}
                 <span className="font-normal">{totalPages}</span>
               </span>
-              <button
-                onClick={() =>
+              <PillButton
+                type="button"
+                clickHandler={() =>
                   setCurrentPage((prev) => Math.min(prev + 1, totalPages))
                 }
-                disabled={currentPage === totalPages}
-                className="font-black px-4 py-2 rounded-full cursor-pointer shadow border-1 border-electric-violet-300 bg-electric-violet-300 text-neutral-900 hover:bg-electric-violet-400 hover:border-electric-violet-400 dark:bg-electric-violet-900 dark:text-neutral-100 dark:border-electric-violet-900 hover:dark:bg-electric-violet-800 hover:dark:border-electric-violet-800 transition-colors duration-300"
-              >
-                <FaChevronRight />
-                <span className="sr-only">Next Page</span>
-              </button>
+                disabled={currentPage >= totalPages}
+                icon={<FaChevronRight />}
+                text="Next Page"
+                srOnly={true}
+              />
             </div>
           </Panel>
 
           <Panel heading="Customize Sample Text">
-            <div className="flex gap-2">
-              <label htmlFor="fontSize" className="font-extralight">
-                Font Size
-              </label>
-              <input
-                type="range"
-                min="13"
-                max="300"
-                id="fontSize"
-                name="fontSize"
-                value={fontSize}
-                onChange={(e) => setFontSize(e.target.value)}
-                className="accent-electric-violet-400 dark:accent-electric-violet-700"
-              />
-              <p>{fontSize}</p>
-            </div>
+            <RangeInput
+              name="fontSize"
+              id="fontSize"
+              value={fontSize}
+              handleChange={setFontSize}
+              min="13"
+              max="300"
+            />
             <div>
               <label
                 htmlFor="sampleText"
@@ -356,12 +326,15 @@ function App() {
                 className="block w-full min-h-24 max-h-40 rounded-md p-3 border-1 border-neutral-300 bg-neutral-50 dark:border-neutral-600 dark:bg-neutral-900"
               />
             </div>
-            <button
-              className="w-fit flex gap-2 items-center font-bold px-6 py-2 mx-auto rounded-full cursor-pointer shadow border-1 border-electric-violet-300 bg-electric-violet-300 text-neutral-900 hover:bg-electric-violet-400 hover:border-electric-violet-400 dark:bg-electric-violet-900 dark:text-neutral-100 dark:border-electric-violet-900 hover:dark:bg-electric-violet-800 hover:dark:border-electric-violet-800 transition-colors duration-300"
-              onClick={() => shuffleSampleText()}
-            >
-              shuffle sample text
-            </button>
+            <div className="mx-auto">
+              <PillButton
+                type="button"
+                srOnly={false}
+                disabled={false}
+                text="shuffle sample text"
+                clickHandler={shuffleSampleText}
+              />
+            </div>
           </Panel>
 
           <Panel heading="Find a Font by Name">
@@ -374,22 +347,26 @@ function App() {
                 ref={searchInput}
                 className="w-full rounded-full p-2 ps-4 border-1 border-neutral-300 bg-neutral-50 dark:border-neutral-600 dark:bg-neutral-900"
               />
-              <button
-                type="submit"
-                className="absolute right-0 font-bold px-4 py-2 rounded-full cursor-pointer shadow border-1 border-electric-violet-300 bg-electric-violet-300 text-neutral-900 hover:bg-electric-violet-400 hover:border-electric-violet-400 dark:bg-electric-violet-900 dark:text-neutral-100 dark:border-electric-violet-900 hover:dark:bg-electric-violet-800 hover:dark:border-electric-violet-800 transition-colors duration-300"
-              >
-                search
-              </button>
+              <div className="absolute right-0 top-0">
+                <PillButton
+                  type="submit"
+                  text="search"
+                  disabled={false}
+                  srOnly={false}
+                />
+              </div>
             </form>
           </Panel>
-
-          <button
-            className="w-fit flex gap-2 items-center font-bold px-6 py-2 mx-auto rounded-full cursor-pointer shadow border-1 border-electric-violet-300 bg-electric-violet-300 text-neutral-900 hover:bg-electric-violet-400 hover:border-electric-violet-400 dark:bg-electric-violet-900 dark:text-neutral-100 dark:border-electric-violet-900 hover:dark:bg-electric-violet-800 hover:dark:border-electric-violet-800 transition-colors duration-300"
-            onClick={() => filterMyFonts()}
-          >
-            <FaHeart />
-            <span>view favorites</span>
-          </button>
+          <div className="mx-auto">
+            <PillButton
+              type="button"
+              disabled={false}
+              srOnly={false}
+              icon={<FaHeart />}
+              text="view favorites"
+              clickHandler={filterMyFonts}
+            />
+          </div>
         </header>
         <div className="col-span-3 grid grid-cols-1 grid-rows-10 ">
           {currentFonts.map((font) => {
@@ -403,26 +380,11 @@ function App() {
                 <div className="absolute top-2 hidden group-hover:block group-focus-within:block text-neutral-500 dark:text-neutral-400">
                   <h2 className="font-extralight text-sm">{font.family}</h2>
                 </div>
-                <button
-                  className="text-xl text-neutral-500 dark:text-neutral-400 cursor-pointer"
-                  onClick={(e) => toggleFav(e, font.family)}
-                >
-                  {myFonts.includes(font.family) ? (
-                    <>
-                      <FaHeart />
-                      <span className="sr-only">
-                        remove {font.family} from favorites
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <FaRegHeart />
-                      <span className="sr-only">
-                        add {font.family} to favorites
-                      </span>
-                    </>
-                  )}
-                </button>
+                <FavButton
+                  font={font}
+                  myFonts={myFonts}
+                  setMyFonts={setMyFonts}
+                />
                 <div className="overflow-x-scroll overflow-y-clip">
                   <link
                     rel="stylesheet"
@@ -452,55 +414,29 @@ function App() {
           <div className="grid grid-cols-4">
             <div className="flex flex-col gap-4">
               <div className="flex items-center gap-4">
-                <button
-                  className="text-xl text-neutral-500 dark:text-neutral-400 cursor-pointer"
-                  onClick={(e) => toggleFav(e, fontDetails.family)}
-                >
-                  {myFonts.includes(fontDetails.family) ? (
-                    <>
-                      <FaHeart />
-                      <span className="sr-only">
-                        remove {fontDetails.family} from favorites
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <FaRegHeart />
-                      <span className="sr-only">
-                        add {fontDetails.family} to favorites
-                      </span>
-                    </>
-                  )}
-                </button>
+                <FavButton
+                  font={fontDetails}
+                  myFonts={myFonts}
+                  setMyFonts={setMyFonts}
+                />
                 <h2 className="font-extralight text-2xl">
                   {fontDetails.family}
                 </h2>
-                <button
-                  onClick={toggleTheme}
-                  className="ms-auto cursor-pointer"
-                >
-                  <IoInvertMode className="text-2xl text-black dark:text-white" />
-                  <span className="sr-only">Theme</span>
-                </button>
+                <div className="ms-auto">
+                  <ThemeButton theme={theme} setTheme={setTheme} />
+                </div>
               </div>
 
               <Panel heading="Heading">
-                <div className="flex gap-2 mb-2">
-                  <label htmlFor="headingSize" className="font-extralight">
-                    Size
-                  </label>
-                  <input
-                    type="range"
-                    min="13"
-                    max="300"
-                    id="headingSize"
-                    name="headingSize"
-                    value={headingSize}
-                    onChange={(e) => setHeadingSize(e.target.value)}
-                    className="accent-electric-violet-400 dark:accent-electric-violet-700"
-                  />
-                  <p>{headingSize}</p>
-                </div>
+                <RangeInput
+                  name="headingSize"
+                  id="headingSize"
+                  value={headingSize}
+                  handleChange={setHeadingSize}
+                  min="13"
+                  max="300"
+                />
+
                 <fieldset>
                   <legend className="font-extralight mb-2">Style</legend>
                   {fontDetails.axes === undefined
@@ -558,22 +494,14 @@ function App() {
                 </fieldset>
               </Panel>
               <Panel heading="Paragraph">
-                <div className="flex gap-2">
-                  <label htmlFor="paragraphSize" className="font-extralight">
-                    Size
-                  </label>
-                  <input
-                    type="range"
-                    min="1"
-                    max="50"
-                    id="paragraphSize"
-                    name="paragraphSize"
-                    value={paragraphSize}
-                    onChange={(e) => setParagraphSize(e.target.value)}
-                    className="accent-electric-violet-400 dark:accent-electric-violet-700"
-                  />
-                  <p>{paragraphSize}</p>
-                </div>
+                <RangeInput
+                  name="paragraphSize"
+                  id="paragraphSize"
+                  value={paragraphSize}
+                  handleChange={setParagraphSize}
+                  min="1"
+                  max="50"
+                />
                 <fieldset>
                   <legend className="font-extralight">Style</legend>
                   {fontDetails.axes === undefined
