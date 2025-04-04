@@ -30,8 +30,10 @@ function App() {
   const [fontSize, setFontSize] = useState(32);
   const [fontDetails, setFontDetails] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [headingVariant, setHeadingVariant] = useState("regular");
   const [headingFontWeight, setHeadingFontWeight] = useState("regular");
   const [headingFontStyle, setHeadingFontStyle] = useState("normal");
+  const [paragraphVariant, setParagraphVariant] = useState("regular");
   const [paragraphFontWeight, setParagraphFontWeight] = useState("regular");
   const [paragraphFontStyle, setParagraphFontStyle] = useState("normal");
   const [headingSize, setHeadingSize] = useState(32);
@@ -58,9 +60,9 @@ function App() {
   }, []);
 
   useEffect(() => {
-    let url = `https://www.googleapis.com/webfonts/v1/webfonts?key=${APIKEY}&subset=latin&sort=${sorting}`;
+    let url = `https://www.googleapis.com/webfonts/v1/webfonts?key=${APIKEY}&subset=latin&capability=VF&sort=${sorting}`;
     if (category !== "all") {
-      url = `https://www.googleapis.com/webfonts/v1/webfonts?key=${APIKEY}&subset=latin&category=${category}&sort=${sorting}`;
+      url = `https://www.googleapis.com/webfonts/v1/webfonts?key=${APIKEY}&subset=latin&capability=VF&category=${category}&sort=${sorting}`;
     }
     fetch(url)
       .then((res) => res.json())
@@ -110,7 +112,8 @@ function App() {
     return variant.replace(/(\d+)([a-zA-Z]+)/, "$1 $2");
   };
 
-  const setHeadingVariant = (variant) => {
+  const setHeadingWeightStyle = (variant) => {
+    setHeadingVariant(variant);
     const matchNumber = variant.match(/\d+/);
     const weight = matchNumber ? parseInt(matchNumber[0], 10) : "normal";
     setHeadingFontWeight(weight);
@@ -118,7 +121,8 @@ function App() {
     setHeadingFontStyle(style);
   };
 
-  const setParagraphVariant = (variant) => {
+  const setParagraphWeightStyle = (variant) => {
+    setParagraphVariant(variant);
     const matchNumber = variant.match(/\d+/);
     const weight = matchNumber ? parseInt(matchNumber[0], 10) : "normal";
     setParagraphFontWeight(weight);
@@ -143,6 +147,18 @@ function App() {
       })
       .filter(Boolean); // Remove null values
 
+    // if Variable Font get weights from axis start and end
+    if (font.axes !== undefined) {
+      const weightAxis = font.axes.find((axis) => axis.tag === "wght");
+      font.variants.map((variant) => {
+        if (variant === "regular") {
+          normalWeights = [`${weightAxis.start}..${weightAxis.end}`];
+        } else if (variant === "italic") {
+          italicWeights = [`${weightAxis.start}..${weightAxis.end}`];
+        }
+      });
+    }
+
     let variantString = "";
 
     if (italicWeights.length > 0) {
@@ -166,7 +182,9 @@ function App() {
   };
 
   const filterMyFonts = () => {
-    fetch(`https://www.googleapis.com/webfonts/v1/webfonts?key=${APIKEY}`)
+    fetch(
+      `https://www.googleapis.com/webfonts/v1/webfonts?key=${APIKEY}&capability=VF`
+    )
       .then((res) => res.json())
       .then((data) => {
         const favs = data.items.filter((font) => myFonts.includes(font.family));
@@ -183,7 +201,7 @@ function App() {
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(" ");
     fetch(
-      `https://www.googleapis.com/webfonts/v1/webfonts?key=${APIKEY}&family=${capWords}`
+      `https://www.googleapis.com/webfonts/v1/webfonts?key=${APIKEY}&capability=VF&family=${capWords}`
     )
       .then((res) => res.json())
       .then((data) => {
@@ -485,23 +503,58 @@ function App() {
                 </div>
                 <fieldset>
                   <legend className="font-extralight mb-2">Style</legend>
-                  {fontDetails.variants.map((variant) => (
-                    <label
-                      key={"h" + variant}
-                      htmlFor={"h" + variant}
-                      className="inline-block m-2 px-3 py-1 rounded-full cursor-pointer shadow border-neutral-50 bg-neutral-50 text-neutral-800 hover:bg-white hover:border-white has-checked:bg-electric-violet-300 has-checked:border-electric-violet-300 dark:bg-neutral-950 dark:text-neutral-300 dark:border-neutral-950 hover:dark:bg-black hover:dark:border-black dark:has-checked:bg-electric-violet-700 dark:has-checked:border-electric-violet-700 has-checked:shadow-none has-checked:inset-shadow-sm inset-shadow-electric-violet-500 dark:inset-shadow-electric-violet-950"
-                    >
-                      <input
-                        type="radio"
-                        name="hvariant"
-                        id={"h" + variant}
-                        value={variant}
-                        onChange={() => setHeadingVariant(variant)}
-                        className="hidden"
-                      />
-                      {formatFontVariantString(variant)}
-                    </label>
-                  ))}
+                  {fontDetails.axes === undefined
+                    ? fontDetails.variants.map((variant) => (
+                        <label
+                          key={"h" + variant}
+                          htmlFor={"h" + variant}
+                          className="inline-block m-2 px-3 py-1 rounded-full cursor-pointer shadow border-neutral-50 bg-neutral-50 text-neutral-800 hover:bg-white hover:border-white has-checked:bg-electric-violet-300 has-checked:border-electric-violet-300 dark:bg-neutral-950 dark:text-neutral-300 dark:border-neutral-950 hover:dark:bg-black hover:dark:border-black dark:has-checked:bg-electric-violet-700 dark:has-checked:border-electric-violet-700 has-checked:shadow-none has-checked:inset-shadow-sm inset-shadow-electric-violet-500 dark:inset-shadow-electric-violet-950"
+                        >
+                          <input
+                            type="radio"
+                            name="hvariant"
+                            id={"h" + variant}
+                            value={variant}
+                            checked={headingVariant === variant}
+                            onChange={() => setHeadingWeightStyle(variant)}
+                            className="hidden"
+                          />
+                          {formatFontVariantString(variant)}
+                        </label>
+                      ))
+                    : fontDetails.variants.map((variant) => {
+                        const weightAxis = fontDetails.axes.find(
+                          (axis) => axis.tag === "wght"
+                        );
+                        const weightOptions = weightAxis
+                          ? Array.from(
+                              {
+                                length:
+                                  (weightAxis.end - weightAxis.start) / 100 + 1,
+                              },
+                              (_, i) => weightAxis.start + i * 100
+                            )
+                          : [];
+                        if (variant === "regular") variant = "";
+                        return weightOptions.map((weight) => (
+                          <label
+                            key={weight + variant}
+                            className="inline-block m-2 px-3 py-1 rounded-full cursor-pointer shadow border-neutral-50 bg-neutral-50 text-neutral-800 hover:bg-white hover:border-white has-checked:bg-electric-violet-300 has-checked:border-electric-violet-300 dark:bg-neutral-950 dark:text-neutral-300 dark:border-neutral-950 hover:dark:bg-black hover:dark:border-black dark:has-checked:bg-electric-violet-700 dark:has-checked:border-electric-violet-700 has-checked:shadow-none has-checked:inset-shadow-sm inset-shadow-electric-violet-500 dark:inset-shadow-electric-violet-950"
+                          >
+                            <input
+                              type="radio"
+                              name="hvariant"
+                              value={weight + variant}
+                              checked={headingVariant === weight + variant}
+                              onChange={() =>
+                                setHeadingWeightStyle(weight + variant)
+                              }
+                              className="hidden"
+                            />
+                            {formatFontVariantString(weight + variant)}
+                          </label>
+                        ));
+                      })}
                 </fieldset>
               </Panel>
               <Panel heading="Paragraph">
@@ -523,23 +576,58 @@ function App() {
                 </div>
                 <fieldset>
                   <legend className="font-extralight">Style</legend>
-                  {fontDetails.variants.map((variant) => (
-                    <label
-                      key={"p" + variant}
-                      htmlFor={"p" + variant}
-                      className="inline-block m-2 px-3 py-1 rounded-full cursor-pointer shadow border-neutral-50 bg-neutral-50 text-neutral-800 hover:bg-white hover:border-white has-checked:bg-electric-violet-300 has-checked:border-electric-violet-300 dark:bg-neutral-950 dark:text-neutral-300 dark:border-neutral-950 hover:dark:bg-black hover:dark:border-black dark:has-checked:bg-electric-violet-700 dark:has-checked:border-electric-violet-700 has-checked:shadow-none has-checked:inset-shadow-sm inset-shadow-electric-violet-500 dark:inset-shadow-electric-violet-950"
-                    >
-                      <input
-                        type="radio"
-                        name="pvariant"
-                        id={"p" + variant}
-                        value={variant}
-                        onChange={() => setParagraphVariant(variant)}
-                        className="hidden"
-                      />
-                      {formatFontVariantString(variant)}
-                    </label>
-                  ))}
+                  {fontDetails.axes === undefined
+                    ? fontDetails.variants.map((variant) => (
+                        <label
+                          key={"p" + variant}
+                          htmlFor={"p" + variant}
+                          className="inline-block m-2 px-3 py-1 rounded-full cursor-pointer shadow border-neutral-50 bg-neutral-50 text-neutral-800 hover:bg-white hover:border-white has-checked:bg-electric-violet-300 has-checked:border-electric-violet-300 dark:bg-neutral-950 dark:text-neutral-300 dark:border-neutral-950 hover:dark:bg-black hover:dark:border-black dark:has-checked:bg-electric-violet-700 dark:has-checked:border-electric-violet-700 has-checked:shadow-none has-checked:inset-shadow-sm inset-shadow-electric-violet-500 dark:inset-shadow-electric-violet-950"
+                        >
+                          <input
+                            type="radio"
+                            name="pvariant"
+                            id={"p" + variant}
+                            value={variant}
+                            checked={paragraphVariant === variant}
+                            onChange={() => setParagraphWeightStyle(variant)}
+                            className="hidden"
+                          />
+                          {formatFontVariantString(variant)}
+                        </label>
+                      ))
+                    : fontDetails.variants.map((variant) => {
+                        const weightAxis = fontDetails.axes.find(
+                          (axis) => axis.tag === "wght"
+                        );
+                        const weightOptions = weightAxis
+                          ? Array.from(
+                              {
+                                length:
+                                  (weightAxis.end - weightAxis.start) / 100 + 1,
+                              },
+                              (_, i) => weightAxis.start + i * 100
+                            )
+                          : [];
+                        if (variant === "regular") variant = "";
+                        return weightOptions.map((weight) => (
+                          <label
+                            key={weight + variant}
+                            className="inline-block m-2 px-3 py-1 rounded-full cursor-pointer shadow border-neutral-50 bg-neutral-50 text-neutral-800 hover:bg-white hover:border-white has-checked:bg-electric-violet-300 has-checked:border-electric-violet-300 dark:bg-neutral-950 dark:text-neutral-300 dark:border-neutral-950 hover:dark:bg-black hover:dark:border-black dark:has-checked:bg-electric-violet-700 dark:has-checked:border-electric-violet-700 has-checked:shadow-none has-checked:inset-shadow-sm inset-shadow-electric-violet-500 dark:inset-shadow-electric-violet-950"
+                          >
+                            <input
+                              type="radio"
+                              name="pvariant"
+                              value={weight + variant}
+                              checked={paragraphVariant === weight + variant}
+                              onChange={() =>
+                                setParagraphWeightStyle(weight + variant)
+                              }
+                              className="hidden"
+                            />
+                            {formatFontVariantString(weight + variant)}
+                          </label>
+                        ));
+                      })}
                 </fieldset>
               </Panel>
             </div>
