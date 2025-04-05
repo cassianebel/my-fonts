@@ -8,6 +8,7 @@ import ThemeButton from "./Components/ThemeButton";
 import RangeInput from "./Components/RangeInput";
 import SelectMenu from "./Components/SelectMenu";
 import PillButton from "./Components/PillButton";
+import RadioInput from "./Components/RadioInput";
 
 const samples = [
   "The quick brown fox jumps over the lazy dog.",
@@ -113,11 +114,10 @@ function App() {
 
   const showDetails = (font) => {
     setFontDetails(font);
-    console.log(font);
     openModal();
   };
 
-  const formatFontVariantString = (variant) => {
+  const formatFontVariantStringForLabel = (variant) => {
     return variant.replace(/(\d+)([a-zA-Z]+)/, "$1 $2");
   };
 
@@ -139,7 +139,7 @@ function App() {
     setParagraphFontStyle(style);
   };
 
-  const createVariantString = (font) => {
+  const createVariantStringForUrl = (font) => {
     let normalWeights = font.variants
       .map((variant) => {
         const weightMatch = variant.match(/\d+/);
@@ -233,11 +233,11 @@ function App() {
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=${fontDetails.family.replace(
             /\s/g,
             "+"
-          )}:${createVariantString(fontDetails)}&display=swap" />`
+          )}:${createVariantStringForUrl(fontDetails)}&display=swap" />`
         : `@import url('https://fonts.googleapis.com/css2?family=${fontDetails.family.replace(
             /\s/g,
             "+"
-          )}:${createVariantString(fontDetails)}&display=swap');`;
+          )}:${createVariantStringForUrl(fontDetails)}&display=swap');`;
 
     navigator.clipboard
       .writeText(copy)
@@ -368,9 +368,10 @@ function App() {
             />
           </div>
         </header>
-        <div className="col-span-3 grid grid-cols-1 grid-rows-10 ">
+        <main className="col-span-3 grid grid-cols-1 grid-rows-10 ">
+          <h2 className="sr-only">Fonts</h2>
           {currentFonts.map((font) => {
-            const variantString = createVariantString(font);
+            const variantString = createVariantStringForUrl(font);
             return (
               <div
                 onClick={() => showDetails(font)}
@@ -378,7 +379,7 @@ function App() {
                 className="relative flex gap-4 items-center px-6 pt-8 pb-4 pe-0 hover:bg-white hover:shadow-lg focus-within:bg-white dark:hover:bg-black hover:shadow-electric-violet-900/25 dark:focus-within:bg-black group"
               >
                 <div className="absolute top-2 hidden group-hover:block group-focus-within:block text-neutral-500 dark:text-neutral-400">
-                  <h2 className="font-extralight text-sm">{font.family}</h2>
+                  <h3 className="font-extralight text-sm">{font.family}</h3>
                 </div>
                 <FavButton
                   font={font}
@@ -407,7 +408,7 @@ function App() {
               </div>
             );
           })}
-        </div>
+        </main>
       </div>
       <Modal isOpen={isModalOpen} onClose={closeModal}>
         {fontDetails && (
@@ -441,24 +442,18 @@ function App() {
                   <legend className="font-extralight mb-2">Style</legend>
                   {fontDetails.axes === undefined
                     ? fontDetails.variants.map((variant) => (
-                        <label
+                        <RadioInput
                           key={"h" + variant}
-                          htmlFor={"h" + variant}
-                          className="inline-block m-2 px-3 py-1 rounded-full cursor-pointer shadow border-neutral-50 bg-neutral-50 text-neutral-800 hover:bg-white hover:border-white has-checked:bg-electric-violet-300 has-checked:border-electric-violet-300 dark:bg-neutral-950 dark:text-neutral-300 dark:border-neutral-950 hover:dark:bg-black hover:dark:border-black dark:has-checked:bg-electric-violet-700 dark:has-checked:border-electric-violet-700 has-checked:shadow-none has-checked:inset-shadow-sm inset-shadow-electric-violet-500 dark:inset-shadow-electric-violet-950"
-                        >
-                          <input
-                            type="radio"
-                            name="hvariant"
-                            id={"h" + variant}
-                            value={variant}
-                            checked={headingVariant === variant}
-                            onChange={() => setHeadingWeightStyle(variant)}
-                            className="hidden"
-                          />
-                          {formatFontVariantString(variant)}
-                        </label>
+                          id={"h" + variant}
+                          name="hVariant"
+                          value={variant}
+                          checked={headingVariant === variant}
+                          changeHandler={() => setHeadingWeightStyle(variant)}
+                          label={formatFontVariantStringForLabel(variant)}
+                        />
                       ))
                     : fontDetails.variants.map((variant) => {
+                        // variable fonts
                         const weightAxis = fontDetails.axes.find(
                           (axis) => axis.tag === "wght"
                         );
@@ -473,22 +468,19 @@ function App() {
                           : [];
                         if (variant === "regular") variant = "";
                         return weightOptions.map((weight) => (
-                          <label
-                            key={weight + variant}
-                            className="inline-block m-2 px-3 py-1 rounded-full cursor-pointer shadow border-neutral-50 bg-neutral-50 text-neutral-800 hover:bg-white hover:border-white has-checked:bg-electric-violet-300 has-checked:border-electric-violet-300 dark:bg-neutral-950 dark:text-neutral-300 dark:border-neutral-950 hover:dark:bg-black hover:dark:border-black dark:has-checked:bg-electric-violet-700 dark:has-checked:border-electric-violet-700 has-checked:shadow-none has-checked:inset-shadow-sm inset-shadow-electric-violet-500 dark:inset-shadow-electric-violet-950"
-                          >
-                            <input
-                              type="radio"
-                              name="hvariant"
-                              value={weight + variant}
-                              checked={headingVariant === weight + variant}
-                              onChange={() =>
-                                setHeadingWeightStyle(weight + variant)
-                              }
-                              className="hidden"
-                            />
-                            {formatFontVariantString(weight + variant)}
-                          </label>
+                          <RadioInput
+                            key={"h" + weight + variant}
+                            id={weight + variant}
+                            name="hVariant"
+                            value={weight + variant}
+                            checked={headingVariant === weight + variant}
+                            changeHandler={() =>
+                              setHeadingWeightStyle(weight + variant)
+                            }
+                            label={formatFontVariantStringForLabel(
+                              weight + variant
+                            )}
+                          />
                         ));
                       })}
                 </fieldset>
@@ -506,24 +498,18 @@ function App() {
                   <legend className="font-extralight">Style</legend>
                   {fontDetails.axes === undefined
                     ? fontDetails.variants.map((variant) => (
-                        <label
+                        <RadioInput
                           key={"p" + variant}
-                          htmlFor={"p" + variant}
-                          className="inline-block m-2 px-3 py-1 rounded-full cursor-pointer shadow border-neutral-50 bg-neutral-50 text-neutral-800 hover:bg-white hover:border-white has-checked:bg-electric-violet-300 has-checked:border-electric-violet-300 dark:bg-neutral-950 dark:text-neutral-300 dark:border-neutral-950 hover:dark:bg-black hover:dark:border-black dark:has-checked:bg-electric-violet-700 dark:has-checked:border-electric-violet-700 has-checked:shadow-none has-checked:inset-shadow-sm inset-shadow-electric-violet-500 dark:inset-shadow-electric-violet-950"
-                        >
-                          <input
-                            type="radio"
-                            name="pvariant"
-                            id={"p" + variant}
-                            value={variant}
-                            checked={paragraphVariant === variant}
-                            onChange={() => setParagraphWeightStyle(variant)}
-                            className="hidden"
-                          />
-                          {formatFontVariantString(variant)}
-                        </label>
+                          id={"p" + variant}
+                          name="pVariant"
+                          value={variant}
+                          checked={paragraphVariant === variant}
+                          changeHandler={() => setParagraphWeightStyle(variant)}
+                          label={formatFontVariantStringForLabel(variant)}
+                        />
                       ))
                     : fontDetails.variants.map((variant) => {
+                        // variable fonts
                         const weightAxis = fontDetails.axes.find(
                           (axis) => axis.tag === "wght"
                         );
@@ -538,22 +524,19 @@ function App() {
                           : [];
                         if (variant === "regular") variant = "";
                         return weightOptions.map((weight) => (
-                          <label
-                            key={weight + variant}
-                            className="inline-block m-2 px-3 py-1 rounded-full cursor-pointer shadow border-neutral-50 bg-neutral-50 text-neutral-800 hover:bg-white hover:border-white has-checked:bg-electric-violet-300 has-checked:border-electric-violet-300 dark:bg-neutral-950 dark:text-neutral-300 dark:border-neutral-950 hover:dark:bg-black hover:dark:border-black dark:has-checked:bg-electric-violet-700 dark:has-checked:border-electric-violet-700 has-checked:shadow-none has-checked:inset-shadow-sm inset-shadow-electric-violet-500 dark:inset-shadow-electric-violet-950"
-                          >
-                            <input
-                              type="radio"
-                              name="pvariant"
-                              value={weight + variant}
-                              checked={paragraphVariant === weight + variant}
-                              onChange={() =>
-                                setParagraphWeightStyle(weight + variant)
-                              }
-                              className="hidden"
-                            />
-                            {formatFontVariantString(weight + variant)}
-                          </label>
+                          <RadioInput
+                            key={"p" + weight + variant}
+                            id={"p" + weight + variant}
+                            name="pVariant"
+                            value={weight + variant}
+                            checked={paragraphVariant === weight + variant}
+                            changeHandler={() =>
+                              setParagraphWeightStyle(weight + variant)
+                            }
+                            label={formatFontVariantStringForLabel(
+                              weight + variant
+                            )}
+                          />
                         ));
                       })}
                 </fieldset>
@@ -596,45 +579,31 @@ function App() {
               <Panel heading="Code">
                 <div className="flex justify-between gap-10">
                   <fieldset>
-                    <label
-                      htmlFor="cssLink"
-                      className="inline-block m-2 px-3 py-1 rounded-full cursor-pointer shadow border-neutral-50 bg-neutral-50 text-neutral-800 hover:bg-white hover:border-white has-checked:bg-electric-violet-300 has-checked:border-electric-violet-300 dark:bg-neutral-950 dark:text-neutral-300 dark:border-neutral-950 hover:dark:bg-black hover:dark:border-black dark:has-checked:bg-electric-violet-700 dark:has-checked:border-electric-violet-700 has-checked:shadow-none has-checked:inset-shadow-sm inset-shadow-electric-violet-500 dark:inset-shadow-electric-violet-950"
-                    >
-                      <input
-                        id="cssLink"
-                        name="cssType"
-                        value="cssLink"
-                        type="radio"
-                        checked={copyType === "cssLink"}
-                        onChange={() => setCopyType("cssLink")}
-                        className="hidden"
-                      />
-                      {"<link>"}
-                    </label>
-                    <label
-                      htmlFor="cssImport"
-                      className="inline-block m-2 px-3 py-1 rounded-full cursor-pointer shadow border-neutral-50 bg-neutral-50 text-neutral-800 hover:bg-white hover:border-white has-checked:bg-electric-violet-300 has-checked:border-electric-violet-300 dark:bg-neutral-950 dark:text-neutral-300 dark:border-neutral-950 hover:dark:bg-black hover:dark:border-black dark:has-checked:bg-electric-violet-700 dark:has-checked:border-electric-violet-700 has-checked:shadow-none has-checked:inset-shadow-sm inset-shadow-electric-violet-500 dark:inset-shadow-electric-violet-950"
-                    >
-                      <input
-                        id="cssImport"
-                        name="cssType"
-                        value="cssImport"
-                        type="radio"
-                        checked={copyType === "cssImport"}
-                        onChange={() => setCopyType("cssImport")}
-                        className="hidden"
-                      />
-                      {"@import"}
-                    </label>
+                    <RadioInput
+                      id="cssLink"
+                      name="cssType"
+                      value="cssLink"
+                      checked={copyType === "cssLink"}
+                      changeHandler={() => setCopyType("cssLink")}
+                      label={"<link>"}
+                    />
+                    <RadioInput
+                      id="cssImport"
+                      name="cssType"
+                      value="cssImport"
+                      checked={copyType === "cssImport"}
+                      changeHandler={() => setCopyType("cssImport")}
+                      label={"@import"}
+                    />
                   </fieldset>
-
-                  <button
-                    onClick={() => handleCopy(fontDetails)}
-                    className="flex items-center gap-2 w-fit font-bold px-4 py-2 rounded-full cursor-pointer shadow border-1 border-electric-violet-300 bg-electric-violet-300 text-neutral-900 hover:bg-electric-violet-400 hover:border-electric-violet-400 dark:bg-electric-violet-900 dark:text-neutral-100 dark:border-electric-violet-900 hover:dark:bg-electric-violet-800 hover:dark:border-electric-violet-800 transition-colors duration-300"
-                  >
-                    <FaRegCopy />
-                    <span>{copying}</span>
-                  </button>
+                  <PillButton
+                    type="button"
+                    srOnly={false}
+                    disabled={false}
+                    clickHandler={() => handleCopy(fontDetails)}
+                    icon={<FaRegCopy />}
+                    text={copying}
+                  />
                 </div>
                 <pre className="p-4 rounded-lg bg-neutral-50 dark:bg-neutral-900">
                   <code className="block text-sm whitespace-pre-wrap">
@@ -644,11 +613,15 @@ function App() {
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=${fontDetails.family.replace(
                           /\s/g,
                           "+"
-                        )}:${createVariantString(fontDetails)}&display=swap" />`
+                        )}:${createVariantStringForUrl(
+                          fontDetails
+                        )}&display=swap" />`
                       : `@import url('https://fonts.googleapis.com/css2?family=family=${fontDetails.family.replace(
                           /\s/g,
                           "+"
-                        )}:${createVariantString(fontDetails)}&display=swap');`}
+                        )}:${createVariantStringForUrl(
+                          fontDetails
+                        )}&display=swap');`}
                   </code>
                 </pre>
               </Panel>

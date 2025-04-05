@@ -12,7 +12,9 @@ const SelectMenu = ({ label, name, id, value, handleChange, options }) => {
         className="px-4 py-2 rounded-md shadow cursor-pointer border-1 border-neutral-300 bg-neutral-100 dark:border-neutral-500 dark:bg-neutral-700 dark:text-neutral-50"
       >
         {options.map((option) => (
-          <option value={option}>{option}</option>
+          <option key={option} value={option}>
+            {option}
+          </option>
         ))}
       </select>
     </div>
