@@ -1,4 +1,4 @@
-# my-fonts
+# My Fonts
 
 My Fonts is a remake of fonts.google.com. They key difference - you can save your favorite fonts to a favorites list!
 
