@@ -52,12 +52,22 @@ function App() {
   const [paragraphVariant, setParagraphVariant] = useState("regular");
   const [paragraphFontWeight, setParagraphFontWeight] = useState("regular");
   const [paragraphFontStyle, setParagraphFontStyle] = useState("normal");
-  const [headingSize, setHeadingSize] = useState(32);
-  const [paragraphSize, setParagraphSize] = useState(18);
+  const [headingSize, setHeadingSize] = useState(56);
+  const [headingText, setHeadingText] = useState(
+    "Quirky Wizards Juggle Flaming Zebras in Daring Midnight Spectacle"
+  );
+  const [editHeading, setEditHeading] = useState(false);
+  const [paragraphSize, setParagraphSize] = useState(21);
+  const [paragraphText, setParagraphText] = useState(
+    "Under the glow of a violet moon, a troupe of eccentric wizards mesmerized the crowd by juggling flaming zebras with astonishing precision. Spectators gasped as the striped creatures twirled through the air, their fiery manes casting wild shadows across the enchanted forest. Despite the chaotic display, not a single whisker was singed, proving once again that magic—when wielded by the truly audacious—can turn the impossible into a breathtaking reality."
+  );
+  const [editParagraph, setEditParagraph] = useState(false);
   const [copyType, setCopyType] = useState("cssLink");
   const [copying, setCopying] = useState("copy");
   const [category, setCategory] = useState("all");
   const [sorting, setSorting] = useState("trending");
+  const [error, setError] = useState(null);
+  const [viewingFavs, setViewingFavs] = useState(false);
 
   const searchInput = useRef(null);
 
@@ -76,16 +86,26 @@ function App() {
   }, []);
 
   useEffect(() => {
+    setError(null);
     let url = `https://www.googleapis.com/webfonts/v1/webfonts?key=${APIKEY}&subset=latin&capability=VF&sort=${sorting}`;
     if (category !== "all") {
       url = `https://www.googleapis.com/webfonts/v1/webfonts?key=${APIKEY}&subset=latin&capability=VF&category=${category}&sort=${sorting}`;
     }
     fetch(url)
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+      })
       .then((data) => {
         console.log(data.items);
         setFonts(data.items);
         setTotalResults(data.items.length);
+      })
+      .catch((err) => {
+        console.error("Fetch error:", err);
+        setError("Sorry, I'm having trouble fetching fonts from Google.");
       });
   }, [APIKEY, sorting, category]);
 
@@ -184,20 +204,62 @@ function App() {
   };
 
   const filterMyFonts = () => {
+    setError(null);
     fetch(
       `https://www.googleapis.com/webfonts/v1/webfonts?key=${APIKEY}&capability=VF`
     )
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+      })
       .then((data) => {
         const favs = data.items.filter((font) => myFonts.includes(font.family));
         setFonts(favs);
         setTotalResults(favs.length);
+        if (favs.length === 0) {
+          setError("Sorry, you haven't saved any favorites yet.");
+        }
+      })
+      .catch((err) => {
+        console.error("Fetch error:", err);
+        setError(
+          "Sorry, I'm having trouble fetching your favorite fonts from Google."
+        );
       });
     setCurrentPage(1);
+    setViewingFavs(true);
+  };
+
+  const browseFonts = () => {
+    setViewingFavs(false);
+    setError(null);
+    let url = `https://www.googleapis.com/webfonts/v1/webfonts?key=${APIKEY}&subset=latin&capability=VF&sort=${sorting}`;
+    if (category !== "all") {
+      url = `https://www.googleapis.com/webfonts/v1/webfonts?key=${APIKEY}&subset=latin&capability=VF&category=${category}&sort=${sorting}`;
+    }
+    fetch(url)
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+      })
+      .then((data) => {
+        console.log(data.items);
+        setFonts(data.items);
+        setTotalResults(data.items.length);
+      })
+      .catch((err) => {
+        console.error("Fetch error:", err);
+        setError("Sorry, I'm having trouble fetching fonts from Google.");
+      });
   };
 
   const findFont = (e) => {
     e.preventDefault();
+    setError(null);
     if (searchInput.current?.value?.trim()) {
       const capWords = searchInput.current.value
         .split(" ")
@@ -206,10 +268,19 @@ function App() {
       fetch(
         `https://www.googleapis.com/webfonts/v1/webfonts?key=${APIKEY}&capability=VF&family=${capWords}`
       )
-        .then((res) => res.json())
+        .then((res) => {
+          if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+          }
+          return res.json();
+        })
         .then((data) => {
           setFonts(data.items);
           setTotalResults(data.items.length);
+        })
+        .catch((err) => {
+          console.error("Fetch error:", err);
+          setError(`Sorry, I could not find a font named "${capWords}"`);
         });
       setCurrentPage(1);
     }
@@ -251,90 +322,80 @@ function App() {
 
   return (
     <div className={theme}>
-      <div className="grid grid-cols-4 bg-neutral-100 text-neutral-950 dark:bg-neutral-900 dark:text-neutral-400">
-        <header className="h-screen overflow-y-scroll  sticky top-0 flex flex-col justify-between gap-4 p-10 bg-neutral-300 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
+      <div className="flex bg-neutral-100 text-neutral-950 dark:bg-black dark:text-neutral-400">
+        <header className="w-[450px] shrink-0 grow-0 h-screen overflow-y-scroll sticky top-0 flex flex-col justify-between gap-4 p-10 bg-neutral-300 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
           <div className="flex gap-4 items-center justify-between">
-            <h1 className="text-2xl font-extralight">My Fonts</h1>
+            {viewingFavs ? (
+              <h1 className="text-xl font-extralight">My Favorite Fonts</h1>
+            ) : (
+              <PillButton
+                type="button"
+                disabled={false}
+                srOnly={false}
+                icon={<FaHeart />}
+                text="view favorites"
+                clickHandler={filterMyFonts}
+              />
+            )}
+
             <ThemeButton theme={theme} setTheme={setTheme} />
           </div>
-          <Panel heading="Explore Fonts">
-            <SelectMenu
-              id="category"
-              name="category"
-              label="Category"
-              value={category}
-              handleChange={setCategory}
-              options={categories}
+          <div className="flex gap-2 items-center justify-between mt-2 font-extralight">
+            <PillButton
+              type="button"
+              clickHandler={() =>
+                setCurrentPage((prev) => Math.max(prev - 1, 1))
+              }
+              disabled={currentPage === 1}
+              icon={<FaChevronLeft />}
+              text="Previous Page"
+              srOnly={true}
             />
-            <SelectMenu
-              id="sort"
-              name="sort"
-              label="Sort by"
-              value={sorting}
-              handleChange={setSorting}
-              options={sortMethods}
+            <span>
+              Page <span className="font-bold">{currentPage}</span> of{" "}
+              <span className="font-normal">{totalPages}</span>
+            </span>
+            <PillButton
+              type="button"
+              clickHandler={() =>
+                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+              }
+              disabled={currentPage >= totalPages}
+              icon={<FaChevronRight />}
+              text="Next Page"
+              srOnly={true}
             />
-            <div className="flex gap-2 items-center justify-between mt-2 font-extralight">
-              <PillButton
-                type="button"
-                clickHandler={() =>
-                  setCurrentPage((prev) => Math.max(prev - 1, 1))
-                }
-                disabled={currentPage === 1}
-                icon={<FaChevronLeft />}
-                text="Previous Page"
-                srOnly={true}
-              />
-              <span>
-                Page <span className="font-bold">{currentPage}</span> of{" "}
-                <span className="font-normal">{totalPages}</span>
-              </span>
-              <PillButton
-                type="button"
-                clickHandler={() =>
-                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                }
-                disabled={currentPage >= totalPages}
-                icon={<FaChevronRight />}
-                text="Next Page"
-                srOnly={true}
-              />
-            </div>
-          </Panel>
-
-          <Panel heading="Customize Sample Text">
-            <RangeInput
-              name="fontSize"
-              id="fontSize"
-              value={fontSize}
-              handleChange={setFontSize}
-              min="13"
-              max="300"
-            />
-            <div>
-              <label
-                htmlFor="sampleText"
-                className="block font-extralight mb-2"
-              >
-                Sample Text
-              </label>
-              <textarea
-                id="sampleText"
-                name="sampleText"
-                value={sampleText}
-                onChange={(e) => setSampleText(e.target.value)}
-                className="block w-full min-h-24 max-h-40 rounded-md p-3 border-1 border-neutral-300 bg-neutral-50 dark:border-neutral-600 dark:bg-neutral-900"
-              />
-            </div>
-            <div className="mx-auto">
-              <PillButton
-                type="button"
-                srOnly={false}
-                disabled={false}
-                text="shuffle sample text"
-                clickHandler={shuffleSampleText}
-              />
-            </div>
+          </div>
+          <Panel heading="Browse Fonts">
+            {viewingFavs ? (
+              <div className="mx-auto">
+                <PillButton
+                  text="back to browsing"
+                  disabled={false}
+                  srOnly={false}
+                  clickHandler={browseFonts}
+                />
+              </div>
+            ) : (
+              <>
+                <SelectMenu
+                  id="category"
+                  name="category"
+                  label="Category"
+                  value={category}
+                  handleChange={setCategory}
+                  options={categories}
+                />
+                <SelectMenu
+                  id="sort"
+                  name="sort"
+                  label="Sort by"
+                  value={sorting}
+                  handleChange={setSorting}
+                  options={sortMethods}
+                />
+              </>
+            )}
           </Panel>
 
           <Panel heading="Find a Font by Name">
@@ -357,63 +418,89 @@ function App() {
               </div>
             </form>
           </Panel>
-          <div className="mx-auto">
-            <PillButton
-              type="button"
-              disabled={false}
-              srOnly={false}
-              icon={<FaHeart />}
-              text="view favorites"
-              clickHandler={filterMyFonts}
+
+          <Panel heading="Customize Sample Text">
+            <RangeInput
+              name="fontSize"
+              id="fontSize"
+              value={fontSize}
+              handleChange={setFontSize}
+              min="13"
+              max="300"
             />
-          </div>
-        </header>
-        <main className="col-span-3 grid grid-cols-1 grid-rows-10 ">
-          <h2 className="sr-only">Fonts</h2>
-          {currentFonts.map((font) => {
-            const variantString = createVariantStringForUrl(font);
-            return (
-              <div
-                onClick={() => showDetails(font)}
-                key={font.family}
-                className="relative flex gap-4 items-center px-6 pt-8 pb-4 pe-0 hover:bg-white hover:shadow-lg focus-within:bg-white dark:hover:bg-black hover:shadow-electric-violet-900/25 dark:focus-within:bg-black group"
-              >
-                <div className="absolute top-2 hidden group-hover:block group-focus-within:block text-neutral-500 dark:text-neutral-400">
-                  <h3 className="font-extralight text-sm">{font.family}</h3>
-                </div>
-                <FavButton
-                  font={font}
-                  myFonts={myFonts}
-                  setMyFonts={setMyFonts}
+            <div>
+              <div className="flex items-end justify-between gap-2 mb-2">
+                <label htmlFor="sampleText" className="block font-extralight ">
+                  Sample Text
+                </label>
+                <PillButton
+                  type="button"
+                  srOnly={false}
+                  disabled={false}
+                  text="shuffle sample text"
+                  clickHandler={shuffleSampleText}
                 />
-                <div className="overflow-x-scroll overflow-y-clip">
-                  <link
-                    rel="stylesheet"
-                    href={`https://fonts.googleapis.com/css2?family=${font.family.replace(
-                      /\s/g,
-                      "+"
-                    )}:${variantString}&display=swap`}
-                  />
-                  <button
-                    style={{
-                      fontFamily: `"${font.family}"`,
-                      fontSize: fontSize + "px",
-                    }}
-                    onClick={() => showDetails(font)}
-                    className="min-w-full w-max cursor-pointer"
-                  >
-                    {sampleText}
-                  </button>
-                </div>
               </div>
-            );
-          })}
+              <textarea
+                id="sampleText"
+                name="sampleText"
+                value={sampleText}
+                onChange={(e) => setSampleText(e.target.value)}
+                className="block w-full min-h-24 max-h-40 rounded-md p-3 border-1 border-neutral-300 bg-neutral-50 dark:border-neutral-600 dark:bg-neutral-900"
+              />
+            </div>
+          </Panel>
+        </header>
+        <main className="w-full grid grid-cols-1 grid-rows-10 ">
+          <h2 className="sr-only">Fonts</h2>
+          {error ? (
+            <p className="p-10">{error}</p>
+          ) : (
+            currentFonts.map((font) => {
+              const variantString = createVariantStringForUrl(font);
+              return (
+                <div
+                  onClick={() => showDetails(font)}
+                  key={font.family}
+                  className="relative flex gap-4 items-center px-6 pt-8 pb-4 pe-0 hover:bg-white hover:shadow-lg focus-within:bg-white dark:hover:bg-neutral-900  dark:hover:text-neutral-50 hover:shadow-electric-violet-900/25 dark:focus-within:bg-black group"
+                >
+                  <div className="absolute top-2 hidden group-hover:block group-focus-within:block text-neutral-500 dark:text-neutral-400">
+                    <h3 className="font-extralight text-sm">{font.family}</h3>
+                  </div>
+                  <FavButton
+                    font={font}
+                    myFonts={myFonts}
+                    setMyFonts={setMyFonts}
+                  />
+                  <div className="overflow-x-scroll overflow-y-auto ">
+                    <link
+                      rel="stylesheet"
+                      href={`https://fonts.googleapis.com/css2?family=${font.family.replace(
+                        /\s/g,
+                        "+"
+                      )}:${variantString}&display=swap`}
+                    />
+                    <button
+                      style={{
+                        fontFamily: `"${font.family}"`,
+                        fontSize: fontSize + "px",
+                      }}
+                      onClick={() => showDetails(font)}
+                      className="min-w-full w-max cursor-pointer"
+                    >
+                      {sampleText}
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          )}
         </main>
       </div>
       <Modal isOpen={isModalOpen} onClose={closeModal}>
         {fontDetails && (
-          <div className="grid grid-cols-4">
-            <div className="flex flex-col gap-4">
+          <div className="flex">
+            <div className="w-[400px] shrink-0 grow-0 flex flex-col gap-4">
               <div className="flex items-center gap-4">
                 <FavButton
                   font={fontDetails}
@@ -543,38 +630,82 @@ function App() {
               </Panel>
             </div>
 
-            <div className="col-span-3 flex flex-col gap-20 ms-14">
+            <div className="flex flex-col gap-20 ms-14">
               <div>
-                <h3
-                  className="my-8"
-                  style={{
-                    fontFamily: `"${fontDetails.family}"`,
-                    fontWeight: headingFontWeight,
-                    fontStyle: headingFontStyle,
-                    fontSize: headingSize + "px",
-                  }}
-                >
-                  Quirky Wizards Juggle Flaming Zebras in Daring Midnight
-                  Spectacle
-                </h3>
-                <p
-                  className=""
-                  style={{
-                    fontFamily: `"${fontDetails.family}"`,
-                    fontWeight: paragraphFontWeight,
-                    fontStyle: paragraphFontStyle,
-                    fontSize: paragraphSize + "px",
-                  }}
-                >
-                  Under the glow of a violet moon, a troupe of eccentric wizards
-                  mesmerized the crowd by juggling flaming zebras with
-                  astonishing precision. Spectators gasped as the striped
-                  creatures twirled through the air, their fiery manes casting
-                  wild shadows across the enchanted forest. Despite the chaotic
-                  display, not a single whisker was singed, proving once again
-                  that magic—when wielded by the truly audacious—can turn the
-                  impossible into a breathtaking reality.
-                </p>
+                {editHeading ? (
+                  <div className="mb-10">
+                    <input
+                      type="text"
+                      id="headingText"
+                      name="headingText"
+                      value={headingText}
+                      onChange={(e) => setHeadingText(e.target.value)}
+                      className="block w-full rounded-md p-3 mb-4 border-1 border-neutral-300 bg-neutral-50 dark:border-neutral-600 dark:bg-neutral-900"
+                    />
+                    <PillButton
+                      type="button"
+                      srOnly={false}
+                      disabled={false}
+                      clickHandler={() => setEditHeading(false)}
+                      text="done editing"
+                    />
+                  </div>
+                ) : (
+                  <h3
+                    className="my-8"
+                    style={{
+                      fontFamily: `"${fontDetails.family}"`,
+                      fontWeight: headingFontWeight,
+                      fontStyle: headingFontStyle,
+                      fontSize: headingSize + "px",
+                    }}
+                  >
+                    <button
+                      onClick={() => setEditHeading(true)}
+                      className="text-start cursor-pointer"
+                      title="edit"
+                    >
+                      {headingText}
+                    </button>
+                  </h3>
+                )}
+
+                {editParagraph ? (
+                  <>
+                    <textarea
+                      id="paragraphText"
+                      name="paragraphText"
+                      value={paragraphText}
+                      onChange={(e) => setParagraphText(e.target.value)}
+                      className="block w-full min-h-32 rounded-md p-3 mb-4 border-1 border-neutral-300 bg-neutral-50 dark:border-neutral-600 dark:bg-neutral-900"
+                    />
+                    <PillButton
+                      type="button"
+                      srOnly={false}
+                      disabled={false}
+                      clickHandler={() => setEditParagraph(false)}
+                      text="done editing"
+                    />
+                  </>
+                ) : (
+                  <p
+                    className=""
+                    style={{
+                      fontFamily: `"${fontDetails.family}"`,
+                      fontWeight: paragraphFontWeight,
+                      fontStyle: paragraphFontStyle,
+                      fontSize: paragraphSize + "px",
+                    }}
+                  >
+                    <button
+                      onClick={() => setEditParagraph(true)}
+                      className="text-start cursor-pointer"
+                      title="edit"
+                    >
+                      {paragraphText}
+                    </button>
+                  </p>
+                )}
               </div>
               <Panel heading="Code">
                 <div className="flex justify-between gap-10">

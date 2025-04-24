@@ -15,10 +15,10 @@ const FavButton = ({ font, setMyFonts, myFonts }) => {
       onClick={(e) => toggleFav(e, font.family)}
     >
       {myFonts.includes(font.family) ? (
-        <>
+        <span className="text-electric-violet-500 ">
           <FaHeart />
           <span className="sr-only">remove {font.family} from favorites</span>
-        </>
+        </span>
       ) : (
         <>
           <FaRegHeart />
