@@ -24,7 +24,7 @@ npm install
 
 ## Configuration
 - To use the Google Fonts API, you’ll need an API key: 
-- [Get your API key](https://support.google.com/googleapi/answer/6158862?hl=en&ref_topic=7013279)
+- [Get your API key](https://developers.google.com/fonts/docs/developer_api) (use the "Get a Key" button after the "Quick Example")
 - Create a .env file in the project root and add your API key:
 ```
   VITE_GOOGLEFONTS_API_KEY=your_api_key_here
